@@ -1,0 +1,11 @@
+{
+  "id": "CSModLoader",
+  "type": "release",
+  "libraries": [],
+  "mainClass": "com.coolspy3.csmodloader.Main",
+  "minimumLauncherVersion": "21",
+  "arguments": {
+    "game": [ "--accessToken", "${auth_access_token}" ],
+    "jvm": [ "-jar", "${game_directory}/versions/CSModLoader/CSModLoader.jar" ]
+  }
+}
