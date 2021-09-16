@@ -204,6 +204,38 @@ public final class Utils {
         }
     }
 
+    public static int varIntLen(int value) {
+        int len = 0;
+        while (true) {
+            if ((value & 0xFFFFFF80) == 0) {
+                len++;
+                return len;
+            }
+
+            len++;
+            // Note: >>> means that the sign bit is shifted with the rest of the number
+            // rather than being
+            // left alone
+            value >>>= 7;
+        }
+    }
+
+    public static int varLongLen(long value) {
+        int len = 0;
+        while (true) {
+            if ((value & 0xFFFFFFFFFFFFFF80L) == 0) {
+                len++;
+                return len;
+            }
+
+            len++;
+            // Note: >>> means that the sign bit is shifted with the rest of the number
+            // rather than being
+            // left alone
+            value >>>= 7;
+        }
+    }
+
     private Utils() {
     }
 }

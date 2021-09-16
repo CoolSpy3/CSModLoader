@@ -13,6 +13,9 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.zip.DataFormatException;
+import java.util.zip.Deflater;
+import java.util.zip.Inflater;
 
 import javax.crypto.Cipher;
 import javax.crypto.CipherInputStream;
@@ -33,9 +36,11 @@ public class ConnectionHandler implements Runnable {
     private final PacketDirection direction;
     private final KeyPair serverKey;
     private final String accessToken;
+    private Deflater compressor;
+    private Inflater decompressor;
 
     // State Variables
-    private boolean compressionEnabled;
+    private int compressionThreshhold;
     private boolean blockPacket;
     private State state;
 
@@ -58,9 +63,12 @@ public class ConnectionHandler implements Runnable {
         this.serverKey = serverKey;
         this.accessToken = accessToken;
 
-        this.compressionEnabled = false;
+        this.compressionThreshhold = -1;
         this.blockPacket = false;
         this.state = State.HANDSHAKE;
+
+        this.compressor = new Deflater();
+        this.decompressor = new Inflater();
     }
 
     public void startInNewThread() {
@@ -68,7 +76,7 @@ public class ConnectionHandler implements Runnable {
     }
 
     public void setCompression(int threshold) {
-        this.compressionEnabled = true;
+        this.compressionThreshhold = threshold;
     }
 
     void setOther(ConnectionHandler other) {
@@ -142,16 +150,18 @@ public class ConnectionHandler implements Runnable {
         }
     }
 
-    protected void readLoop() throws IOException {
+    protected void readLoop() throws DataFormatException, IOException {
         int length = Utils.readVarInt(is);
         is.mark(length);
 
         blockPacket = false;
         Runnable command = () -> {};
 
-        if(compressionEnabled) {
-
-        } else {
+        byte[] packetData;
+        if(compressionThreshhold == -1) {
+            packetData = Utils.readNBytes(is, length);
+            is.reset();
+            is.mark(length);
             int packetId = Utils.readVarInt(is);
             if(packetId == 0x03 || packetId == 0x46) {
                 setCompression(-1);
@@ -267,7 +277,20 @@ public class ConnectionHandler implements Runnable {
                     };
                 }
             }
+        } else {
+            int uncompressedLength = Utils.readVarInt(is);
+            if(uncompressedLength == 0) {
+                packetData = Utils.readNBytes(is, uncompressedLength);
+            } else {
+                int dataLength = length - Utils.varIntLen(uncompressedLength);
+                byte[] compressedPackedData = Utils.readNBytes(is, dataLength);
+                decompressor.setInput(compressedPackedData);
+                packetData = new byte[uncompressedLength];
+                decompressor.inflate(packetData);
+                decompressor.reset();
+            }
         }
+        PacketHandler.handleRawPacket(this, packetData);
         is.reset();
         byte[] packet = Utils.readNBytes(is, length);
         if(blockPacket) {
