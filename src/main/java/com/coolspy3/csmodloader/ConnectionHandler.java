@@ -13,6 +13,7 @@ import java.security.KeyPair;
 import java.security.PublicKey;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Arrays;
+import java.util.concurrent.locks.ReentrantLock;
 import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
 import java.util.zip.Inflater;
@@ -36,8 +37,9 @@ public class ConnectionHandler implements Runnable {
     private final PacketDirection direction;
     private final KeyPair serverKey;
     private final String accessToken;
-    private Deflater compressor;
-    private Inflater decompressor;
+    private final Deflater compressor;
+    private final Inflater decompressor;
+    private final ReentrantLock socketLock;
 
     // State Variables
     private int compressionThreshhold;
@@ -69,6 +71,7 @@ public class ConnectionHandler implements Runnable {
 
         this.compressor = new Deflater();
         this.decompressor = new Inflater();
+        this.socketLock = new ReentrantLock();
     }
 
     public void startInNewThread() {
@@ -113,6 +116,15 @@ public class ConnectionHandler implements Runnable {
         blockPacket = true;
     }
 
+    private void safeWrite(IOCommand writeCommand) throws IOException {
+        socketLock.lock();
+        try {
+            writeCommand.run();
+        } finally {
+            socketLock.unlock();
+        }
+    }
+
     @Override
     @SuppressWarnings({"UseSpecificCatch", "SynchronizeOnNonFinalField"})
     public void run() {
@@ -126,8 +138,10 @@ public class ConnectionHandler implements Runnable {
                         if(nBytesRead < 0) {
                             throw new EOFException();
                         }
-                        os.write(buf, 0, nBytesRead);
-                        os.flush();
+                        safeWrite(() -> {
+                            os.write(buf, 0, nBytesRead);
+                            os.flush();
+                        });
                     } else {
                         readLoop();
                     }
@@ -195,9 +209,11 @@ public class ConnectionHandler implements Runnable {
                     baos.write(serverPort);
                     Utils.writeVarInt(baos, nextState);
 
-                    Utils.writeVarInt(os, baos.size());
-                    os.write(baos.toByteArray());
-                    os.flush();
+                    safeWrite(() -> {
+                        Utils.writeVarInt(os, baos.size());
+                        os.write(baos.toByteArray());
+                        os.flush();
+                    });
                     break;
                 case PLAY:
                     // String username = Utils.readString(is);
@@ -230,9 +246,11 @@ public class ConnectionHandler implements Runnable {
                     Utils.writeBytes(baos, serverKey.getPublic().getEncoded());
                     Utils.writeBytes(baos, verifyToken);
 
-                    Utils.writeVarInt(os, baos.size());
-                    os.write(baos.toByteArray());
-                    os.flush();
+                    safeWrite(() -> {
+                        Utils.writeVarInt(os, baos.size());
+                        os.write(baos.toByteArray());
+                        os.flush();
+                    });
 
                     ConnectionHandler handler = this;
                     // Wait until the client enables encryption so that the next call to is.wait() will be decrypted
@@ -264,9 +282,11 @@ public class ConnectionHandler implements Runnable {
                     Utils.noFail(() -> recipher.init(1, serverPublicKey));
                     Utils.writeBytes(baos, Utils.noFail(() -> recipher.doFinal(verifyToken)));
 
-                    Utils.writeVarInt(os, baos.size());
-                    os.write(baos.toByteArray());
-                    os.flush();
+                    safeWrite(() -> {
+                        Utils.writeVarInt(os, baos.size());
+                        os.write(baos.toByteArray());
+                        os.flush();
+                    });
 
                     // Send Encryption Response and then enable encryption fo both listeners
                     command = () -> {
@@ -296,12 +316,69 @@ public class ConnectionHandler implements Runnable {
         if(blockPacket) {
             assert packet[0] == 0x00 || packet[0] == 0x01 : "" + packet[0];
         }
-        if(!blockPacket) {
-            Utils.writeVarInt(os, length);
-            os.write(packet);
-        }
-        os.flush();
+        safeWrite(() -> {
+            if(!blockPacket) {
+                Utils.writeVarInt(os, length);
+                os.write(packet);
+                os.flush();
+            }
+        });
         command.run();
+    }
+
+    public void write(PacketDirection direction, int packetId, IOConsumer<OutputStream> writeFunc) throws IOException {
+        if(direction != this.direction) {
+            other.write(direction, packetId, writeFunc);
+            return;
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        writeFunc.run(baos);
+        write(direction, packetId, baos.toByteArray());
+    }
+
+    public void write(PacketDirection direction, int packetId, byte[] packetData) throws IOException {
+        if(direction != this.direction) {
+            other.write(direction, packetId, packetData);
+            return;
+        }
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Utils.writeVarInt(baos, packetId);
+        baos.write(packetData);
+        write(direction, baos.toByteArray());
+    }
+
+    public void write(PacketDirection direction, byte[] packetData) throws IOException {
+        if(direction != this.direction) {
+            other.write(direction, packetData);
+            return;
+        }
+        if(compressionThreshhold == -1 || packetData.length < compressionThreshhold) {
+            safeWrite(() -> {
+                Utils.writeVarInt(os, packetData.length);
+                if(compressionThreshhold != -1) {
+                    Utils.writeVarInt(os, 0);
+                }
+                os.write(packetData);
+                os.flush();
+            });
+            return;
+        }
+        int uncompressedLength = packetData.length;
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        Utils.writeVarInt(baos, uncompressedLength);
+        compressor.setInput(packetData);
+        compressor.finish();
+        byte[] buf = new byte[1024];
+        while(!compressor.finished()) {
+            int numCompressedBytes = compressor.deflate(buf);
+            baos.write(buf, 0, numCompressedBytes);
+        }
+        byte[] compressedPacket = baos.toByteArray();
+        safeWrite(() -> {
+            Utils.writeVarInt(os, compressedPacket.length);
+            os.write(compressedPacket);
+            os.flush();
+        });
     }
 
     public static enum State {
