@@ -50,17 +50,6 @@ public final class McUtils {
         return Utils.post("https://sessionserver.mojang.com/session/minecraft/join", request);
     }
 
-    public static boolean validateAccessToken(String accessToken) {
-        try {
-            ValidateTokenRequest request = new ValidateTokenRequest();
-            request.accessToken = accessToken;
-
-            return (int)Utils.post("https://authserver.mojang.com/validate", request)[0] < 300;
-        } catch(IOException e) {
-            return false;
-        }
-    }
-
     private McUtils() {}
 
 }

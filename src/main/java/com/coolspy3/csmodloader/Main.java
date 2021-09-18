@@ -7,20 +7,18 @@ import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
+import java.util.Arrays;
 
 public class Main {
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+        System.out.println(Arrays.toString(args));
         String accessToken = null;
         for(int i = 0; i < args.length-1; i++) {
             if(args[i].toLowerCase().equals("--accesstoken")) {
                 accessToken = args[i+1];
                 break;
             }
-        }
-        if(accessToken == null || !McUtils.validateAccessToken(accessToken)) {
-            System.err.println("Invalid Access Token: " + accessToken);
-            System.exit(1);
         }
         Config.load();
         KeyPair rsaKey;
