@@ -250,8 +250,7 @@ public class ConnectionHandler implements Runnable {
                     byte[] verifyTokenEncrypted = Utils.readBytes(is);
                     byte[] verifyToken = Utils.noFail(() -> cipher.doFinal(verifyTokenEncrypted));
 
-                    String selectedProfile = "862b77f2-674f-42b4-96af-1f9864266662";
-                    McUtils.joinServerYggdrasil(accessToken, selectedProfile, serverId, serverPublicKey, sharedSecret);
+                    McUtils.joinServerYggdrasil(accessToken, GameArgs.get().uuid.toString(), serverId, serverPublicKey, sharedSecret);
 
                     other.enableEncryption(new SecretKeySpec(Arrays.copyOf(sharedSecret, sharedSecret.length), "AES"));
                     Cipher recipher = Utils.noFail(() -> Cipher.getInstance(serverPublicKey.getAlgorithm()));
