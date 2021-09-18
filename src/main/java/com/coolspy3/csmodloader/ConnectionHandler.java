@@ -266,9 +266,6 @@ public class ConnectionHandler implements Runnable {
                     byte[] verifyTokenEncrypted = Utils.readBytes(is);
                     byte[] verifyToken = Utils.noFail(() -> cipher.doFinal(verifyTokenEncrypted));
 
-                    // String accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwNjcyMTZkMjkwYzc1OTkxYWU1NDE0ZmMwM2JhMDA3NSIsInlnZ3QiOiJhYzUyNjEwZjk4Njc0M2FkOTQyMmFjN2JjNzEzMjAzOSIsInNwciI6Ijg2MmI3N2YyNjc0ZjQyYjQ5NmFmMWY5ODY0MjY2NjYyIiwiaXNzIjoiWWdnZHJhc2lsLUF1dGgiLCJleHAiOjE2MzE1MTc1NzIsImlhdCI6MTYzMTM0NDc3Mn0.b3SWtte4PfhRAZO-V8XRjq4WZkz7YAexI35DPpoNFS0";
-                    // String accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwNjcyMTZkMjkwYzc1OTkxYWU1NDE0ZmMwM2JhMDA3NSIsInlnZ3QiOiI0YmNlODg3ZDYyZmM0NjNiYTlmYjVmZTJiYWQyNmU5YiIsInNwciI6Ijg2MmI3N2YyNjc0ZjQyYjQ5NmFmMWY5ODY0MjY2NjYyIiwiaXNzIjoiWWdnZHJhc2lsLUF1dGgiLCJleHAiOjE2MzE1NzM4NjAsImlhdCI6MTYzMTQwMTA2MH0.o1Rzjr7LT_mVvSIaK5sUkqnRvhyA_7X8GyU0njQM5so";
-                    // String accessToken = "eyJhbGciOiJIUzI1NiJ9.eyJzdWIiOiIwNjcyMTZkMjkwYzc1OTkxYWU1NDE0ZmMwM2JhMDA3NSIsInlnZ3QiOiJhMjhiMzIxYjVlMGU0OTFkYTU2ZTUzMmVkYzYyMjliZSIsInNwciI6Ijg2MmI3N2YyNjc0ZjQyYjQ5NmFmMWY5ODY0MjY2NjYyIiwiaXNzIjoiWWdnZHJhc2lsLUF1dGgiLCJleHAiOjE2MzE2NTY1OTUsImlhdCI6MTYzMTQ4Mzc5NX0.NbE9JN5XwpQl7N8EvLppfrZimlFKAnRT9ElM084pE1A";
                     String selectedProfile = "862b77f2-674f-42b4-96af-1f9864266662";
                     McUtils.joinServerYggdrasil(accessToken, selectedProfile, serverId, serverPublicKey, sharedSecret);
 
