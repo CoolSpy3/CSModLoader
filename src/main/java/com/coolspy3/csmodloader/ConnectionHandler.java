@@ -47,7 +47,6 @@ public class ConnectionHandler implements Runnable {
     private State state;
 
     // Variables which will be assigned as needed
-    private Player player;
     private String serverId;
     private PublicKey serverPublicKey;
     private SecretKey key;
@@ -84,14 +83,6 @@ public class ConnectionHandler implements Runnable {
 
     void setOther(ConnectionHandler other) {
         this.other = other;
-    }
-
-    void setPlayer(Player player) {
-        this.player = player;
-    }
-
-    public Player getPlayer() {
-        return player;
     }
 
     public void setupEncryption(String serverId, PublicKey key) {
@@ -216,13 +207,6 @@ public class ConnectionHandler implements Runnable {
                     });
                     break;
                 case PLAY:
-                    // String username = Utils.readString(is);
-                    // try {
-                    //     player = new Player(username, MojangAPI.getUUID(username));
-                    // } catch(APIException e) {
-                    //     throw new IOException(e);
-                    // }
-                    break;
                 case STATUS:
                 default:
                     break;

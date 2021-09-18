@@ -8,18 +8,42 @@ import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
+import java.util.Iterator;
+import java.util.UUID;
 
 public class Main {
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
-        System.out.println(Arrays.toString(args));
         String accessToken = null;
-        for(int i = 0; i < args.length-1; i++) {
-            if(args[i].toLowerCase().equals("--accesstoken")) {
-                accessToken = args[i+1];
-                break;
+        String gameDir = null;
+        String username = null;
+        UUID uuid = null;
+        {
+            Iterator<String> argIttr = Arrays.asList(args).iterator();
+            for(;;) {
+                String arg = argIttr.next().toLowerCase();
+                if(!argIttr.hasNext()) {
+                    break;
+                }
+                switch(arg) {
+                    case "--accesstoken":
+                        accessToken = argIttr.next();
+                        continue;
+                    case "--gamedir":
+                        gameDir = argIttr.next();
+                        continue;
+                    case "--username":
+                        username = argIttr.next();
+                        continue;
+                    case "--uuid":
+                        uuid = UUID.fromString(argIttr.next());
+                        continue;
+                    default:
+                        break;
+                }
             }
         }
+        new GameArgs(gameDir, username, uuid).set();
         Config.load();
         KeyPair rsaKey;
         {
