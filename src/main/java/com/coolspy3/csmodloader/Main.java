@@ -11,6 +11,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
+import com.coolspy3.csmodloader.network.ConnectionHandler;
+
 public class Main {
 
     public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
@@ -57,12 +59,7 @@ public class Main {
                     Socket client = sc.accept();
                     // Socket server = new Socket("mc.hypixel.net", 25565);
                     Socket server = new Socket("localhost", 11223);
-                    ConnectionHandler c2s = new ConnectionHandler(client, server, "mc.hypixel.net", accessToken, PacketDirection.SERVERBOUND, rsaKey);
-                    ConnectionHandler s2c = new ConnectionHandler(server, client, "mc.hypixel.net", accessToken, PacketDirection.CLIENTBOUND, rsaKey);
-                    c2s.setOther(s2c);
-                    s2c.setOther(c2s);
-                    s2c.startInNewThread();
-                    c2s.startInNewThread();
+                    ConnectionHandler.start(client, server, "mc.hypixel.net", accessToken, rsaKey);
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
                 }

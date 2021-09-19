@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader.packet;
+package com.coolspy3.csmodloader.network.packet;
 
 import java.io.IOException;
 import java.io.InputStream;

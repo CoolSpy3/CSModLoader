@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader;
+package com.coolspy3.csmodloader.network;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -25,6 +25,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.coolspy3.csmodloader.GameArgs;
+import com.coolspy3.csmodloader.McUtils;
+import com.coolspy3.csmodloader.Utils;
 import com.coolspy3.csmodloader.interfaces.IOCommand;
 import com.coolspy3.csmodloader.interfaces.IOConsumer;
 
@@ -84,10 +87,6 @@ public class ConnectionHandler implements Runnable {
         this.compressionThreshhold = threshold;
     }
 
-    void setOther(ConnectionHandler other) {
-        this.other = other;
-    }
-
     public void setupEncryption(String serverId, PublicKey key) {
         this.serverId = serverId;
         this.serverPublicKey = key;
@@ -112,6 +111,10 @@ public class ConnectionHandler implements Runnable {
 
     public void safeWrite(ByteArrayOutputStream baos) throws IOException {
         safeWrite(baos.toByteArray());
+    }
+
+    private void setOther(ConnectionHandler other) {
+        this.other = other;
     }
 
     private void safeWrite(byte[] data) throws IOException {
@@ -350,6 +353,15 @@ public class ConnectionHandler implements Runnable {
             baos.write(buf, 0, numCompressedBytes);
         }
         safeWrite(baos);
+    }
+
+    public static void start(Socket client, Socket server, String host, String accessToken, KeyPair key) throws IOException {
+        ConnectionHandler c2s = new ConnectionHandler(client, server, host, accessToken, PacketDirection.SERVERBOUND, key);
+        ConnectionHandler s2c = new ConnectionHandler(server, client, host, accessToken, PacketDirection.CLIENTBOUND, key);
+        c2s.setOther(s2c);
+        s2c.setOther(c2s);
+        s2c.startInNewThread();
+        c2s.startInNewThread();
     }
 
     public static enum State {

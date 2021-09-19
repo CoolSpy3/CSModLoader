@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader.packet;
+package com.coolspy3.csmodloader.network.packet;
 
 public abstract class Packet {
 

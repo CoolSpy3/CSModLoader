@@ -1,8 +1,10 @@
-package com.coolspy3.csmodloader;
+package com.coolspy3.csmodloader.network;
 
 import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+
+import com.coolspy3.csmodloader.Utils;
 
 public class PacketHandler {
 
