@@ -25,6 +25,9 @@ import javax.crypto.SecretKey;
 import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
+import com.coolspy3.csmodloader.interfaces.IOCommand;
+import com.coolspy3.csmodloader.interfaces.IOConsumer;
+
 public class ConnectionHandler implements Runnable {
 
     private static final KeyFactory keyFactory = Utils.noFail(() -> KeyFactory.getInstance("RSA"));
@@ -105,6 +108,18 @@ public class ConnectionHandler implements Runnable {
 
     public void blockPacket() {
         blockPacket = true;
+    }
+
+    public void safeWrite(ByteArrayOutputStream baos) throws IOException {
+        safeWrite(baos.toByteArray());
+    }
+
+    private void safeWrite(byte[] data) throws IOException {
+        safeWrite(() -> {
+            Utils.writeVarInt(data.length, os);
+            os.write(data);
+            os.flush();
+        });
     }
 
     private void safeWrite(IOCommand writeCommand) throws IOException {
@@ -195,16 +210,12 @@ public class ConnectionHandler implements Runnable {
 
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(0x00);
-                    Utils.writeVarInt(baos, version);
-                    Utils.writeString(baos, serverIp);
+                    Utils.writeVarInt(version, baos);
+                    Utils.writeString(serverIp, baos);
                     baos.write(serverPort);
-                    Utils.writeVarInt(baos, nextState);
+                    Utils.writeVarInt(nextState, baos);
 
-                    safeWrite(() -> {
-                        Utils.writeVarInt(os, baos.size());
-                        os.write(baos.toByteArray());
-                        os.flush();
-                    });
+                    safeWrite(baos);
                     break;
                 case PLAY:
                 case STATUS:
@@ -226,15 +237,11 @@ public class ConnectionHandler implements Runnable {
 
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(0x01);
-                    Utils.writeString(baos, "");
-                    Utils.writeBytes(baos, serverKey.getPublic().getEncoded());
-                    Utils.writeBytes(baos, verifyToken);
+                    Utils.writeString("", baos);
+                    Utils.writeBytes(serverKey.getPublic().getEncoded(), baos);
+                    Utils.writeBytes(verifyToken, baos);
 
-                    safeWrite(() -> {
-                        Utils.writeVarInt(os, baos.size());
-                        os.write(baos.toByteArray());
-                        os.flush();
-                    });
+                    safeWrite(baos);
 
                     ConnectionHandler handler = this;
                     // Wait until the client enables encryption so that the next call to is.wait() will be decrypted
@@ -258,15 +265,11 @@ public class ConnectionHandler implements Runnable {
                     ByteArrayOutputStream baos = new ByteArrayOutputStream();
                     baos.write(0x01);
                     Utils.noFail(() -> recipher.init(1, serverPublicKey));
-                    Utils.writeBytes(baos, Utils.noFail(() -> recipher.doFinal(Arrays.copyOf(sharedSecret, sharedSecret.length))));
+                    Utils.writeBytes(Utils.noFail(() -> recipher.doFinal(Arrays.copyOf(sharedSecret, sharedSecret.length))), baos);
                     Utils.noFail(() -> recipher.init(1, serverPublicKey));
-                    Utils.writeBytes(baos, Utils.noFail(() -> recipher.doFinal(verifyToken)));
+                    Utils.writeBytes(Utils.noFail(() -> recipher.doFinal(verifyToken)), baos);
 
-                    safeWrite(() -> {
-                        Utils.writeVarInt(os, baos.size());
-                        os.write(baos.toByteArray());
-                        os.flush();
-                    });
+                    safeWrite(baos);
 
                     // Send Encryption Response and then enable encryption fo both listeners
                     command = () -> {
@@ -293,16 +296,9 @@ public class ConnectionHandler implements Runnable {
         PacketHandler.handleRawPacket(this, packetData);
         is.reset();
         byte[] packet = Utils.readNBytes(is, length);
-        if(blockPacket) {
-            assert packet[0] == 0x00 || packet[0] == 0x01 : "" + packet[0];
+        if(!blockPacket) {
+            safeWrite(packet);
         }
-        safeWrite(() -> {
-            if(!blockPacket) {
-                Utils.writeVarInt(os, length);
-                os.write(packet);
-                os.flush();
-            }
-        });
         command.run();
     }
 
@@ -322,7 +318,7 @@ public class ConnectionHandler implements Runnable {
             return;
         }
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Utils.writeVarInt(baos, packetId);
+        Utils.writeVarInt(packetId, baos);
         baos.write(packetData);
         write(direction, baos.toByteArray());
     }
@@ -334,9 +330,9 @@ public class ConnectionHandler implements Runnable {
         }
         if(compressionThreshhold == -1 || packetData.length < compressionThreshhold) {
             safeWrite(() -> {
-                Utils.writeVarInt(os, packetData.length);
+                Utils.writeVarInt(packetData.length, os);
                 if(compressionThreshhold != -1) {
-                    Utils.writeVarInt(os, 0);
+                    Utils.writeVarInt(0, os);
                 }
                 os.write(packetData);
                 os.flush();
@@ -345,7 +341,7 @@ public class ConnectionHandler implements Runnable {
         }
         int uncompressedLength = packetData.length;
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        Utils.writeVarInt(baos, uncompressedLength);
+        Utils.writeVarInt(uncompressedLength, baos);
         compressor.setInput(packetData);
         compressor.finish();
         byte[] buf = new byte[1024];
@@ -353,12 +349,7 @@ public class ConnectionHandler implements Runnable {
             int numCompressedBytes = compressor.deflate(buf);
             baos.write(buf, 0, numCompressedBytes);
         }
-        byte[] compressedPacket = baos.toByteArray();
-        safeWrite(() -> {
-            Utils.writeVarInt(os, compressedPacket.length);
-            os.write(compressedPacket);
-            os.flush();
-        });
+        safeWrite(baos);
     }
 
     public static enum State {

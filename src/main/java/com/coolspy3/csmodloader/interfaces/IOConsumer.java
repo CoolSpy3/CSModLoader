@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader;
+package com.coolspy3.csmodloader.interfaces;
 
 import java.io.IOException;
 
