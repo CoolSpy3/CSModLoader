@@ -1,9 +1,13 @@
 package com.coolspy3.csmodloader;
 
+import java.awt.Frame;
+import java.awt.event.WindowAdapter;
+import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
+import java.io.PrintStream;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.nio.ByteBuffer;
@@ -11,7 +15,11 @@ import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.function.BiFunction;
 import java.util.function.Function;
+import java.util.function.Supplier;
 
+import javax.swing.SwingUtilities;
+
+import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.google.gson.Gson;
 
 import org.apache.commons.io.IOUtils;
@@ -28,12 +36,32 @@ public final class Utils {
         return out;
     }
 
+    public static void createAndWaitFor(Supplier<Frame> createFunc) throws InterruptedException {
+        Object lock = new Object();
+        SwingUtilities.invokeLater(() -> createFunc.get().addWindowListener(new WindowAdapter() {
+            public void windowClosing(java.awt.event.WindowEvent e) {
+                synchronized(lock) {
+                    lock.notifyAll();
+                }
+            }
+        }));
+        synchronized(lock) {
+            lock.wait();
+        }
+    }
+
     public static <T> T fromBytes(byte[] bytes, Function<ByteBuffer, T> convFunc) {
         return convFunc.apply(ByteBuffer.wrap(bytes));
     }
 
     public static <T> byte[] getBytes(T num, int length, BiFunction<ByteBuffer, T, ByteBuffer> convFunc) {
         return convFunc.apply(ByteBuffer.allocate(length), num).array();
+    }
+
+    public static String getStackTrace(Exception e) {
+        ByteArrayOutputStream bais = new ByteArrayOutputStream();
+        e.printStackTrace(new PrintStream(bais, true));
+        return new String(bais.toByteArray(), UTF_8);
     }
 
     public static Object[] post(String url, Object payload) throws IOException {
@@ -91,11 +119,17 @@ public final class Utils {
         }
     }
 
+    public static void safeCreateAndWaitFor(Supplier<Frame> createFunc) {
+        safe(() -> createAndWaitFor(createFunc));
+    }
+
     public static void noFail(ExceptionRunnable func) {
         try {
             func.run();
         } catch (Exception e) {
-            throw new Error(e);
+            safeCreateAndWaitFor(() -> new TextAreaFrame("If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(", e));
+            e.printStackTrace(System.err);
+            System.exit(1);
         }
     }
 
@@ -103,6 +137,7 @@ public final class Utils {
         try {
             return func.get();
         } catch (Exception e) {
+            safeCreateAndWaitFor(() -> new TextAreaFrame("If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(", e));
             e.printStackTrace(System.err);
             System.exit(1);
             return null;

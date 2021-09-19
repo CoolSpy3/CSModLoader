@@ -6,17 +6,17 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
-import java.security.NoSuchAlgorithmException;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
+import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.network.ConnectionHandler;
 
 public class Main {
 
-    public static void main(String[] args) throws IOException, NoSuchAlgorithmException {
+    public static void main(String[] args) {
         String accessToken = null;
         String gameDir = null;
         String username = null;
@@ -47,11 +47,17 @@ public class Main {
             }
         }
         new GameArgs(new File(gameDir), username, uuid).set();
-        Config.load();
+        try {
+            Config.load();
+        } catch(IOException e) {
+            e.printStackTrace();
+            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Failed to load config file", e));
+            System.exit(1);
+        }
         KeyPair rsaKey;
         {
-            KeyPairGenerator generator = KeyPairGenerator.getInstance("RSA");
-            generator.initialize(1024, SecureRandom.getInstanceStrong());
+            KeyPairGenerator generator = Utils.noFail(() -> KeyPairGenerator.getInstance("RSA"));
+            generator.initialize(1024, Utils.noFail(() -> SecureRandom.getInstanceStrong()));
             rsaKey = generator.genKeyPair();
         }
         try(ServerSocket sc = new ServerSocket(25565)) {
@@ -63,8 +69,13 @@ public class Main {
                     ConnectionHandler.start(client, server, "mc.hypixel.net", accessToken, rsaKey);
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
+                    new TextAreaFrame(e);
                 }
             }
+        } catch(IOException e) {
+            e.printStackTrace();
+            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(e));
+            System.exit(1);
         }
     }
 }

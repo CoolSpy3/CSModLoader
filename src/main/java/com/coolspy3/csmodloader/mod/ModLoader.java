@@ -5,12 +5,15 @@ import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.CopyOnWriteArrayList;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -20,13 +23,19 @@ import java.util.stream.Stream;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.coolspy3.csmodloader.GameArgs;
+import com.coolspy3.csmodloader.Utils;
+import com.coolspy3.csmodloader.gui.ListFrame;
+import com.coolspy3.csmodloader.gui.TextAreaFrame;
 
 final class ModLoader {
 
+    public static final String[] BASIC_MOD_INFO = new String[] {"Mod Id", "Version"};
+    public static final Function<Mod, String[]> MODINFOMAPP_FUNCTION = mod -> new String[] {mod.id(), mod.version()};
+
     public static ArrayList<Entrypoint> loadMods() {
         HashMap<Mod, Class<?>> mods = new HashMap<>();
-        try {
-            for(File file: GameArgs.get().gameDir.listFiles(new FileNameExtensionFilter("Jar Files", "jar")::accept)) {
+        for(File file: GameArgs.get().gameDir.listFiles(new FileNameExtensionFilter("Jar Files", "jar")::accept)) {
+                try {
                 if(file.isDirectory()) {
                     continue;
                 }
@@ -36,30 +45,50 @@ final class ModLoader {
                         mods.put(mod, c);
                     }
                 }
+            } catch(ClassNotFoundException | IOException e) {
+                String filePath;
+                try {
+                    filePath = file.getCanonicalPath();
+                } catch(IOException exc) {
+                    filePath = file.getAbsolutePath();
+                }
+                String tmp = filePath;
+                e.printStackTrace(System.err);
+                Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod file: " + tmp + "!", e));
+                return null;
             }
-        } catch(ClassNotFoundException | IOException e) {
-            e.printStackTrace(System.err);
-            // TODO: Report Error
-            return null;
         }
 
-        if(!mods.values().stream().map(c -> Entrypoint.class.isAssignableFrom(c)).allMatch(Predicate.isEqual(true))) {
-            // TODO: Report Error
-            System.err.println("One or more mods do not implement Entrypoint");
-            return null;
+        {
+            List<Mod> nonEntrypointMods = mods.keySet().stream().filter(mod -> !Entrypoint.class.isAssignableFrom(mods.get(mod))).collect(Collectors.toList());
+            if(!nonEntrypointMods.isEmpty()) {
+                System.err.println("The following mods do not implement Entrypoint:\n" + nonEntrypointMods.stream().map(MODINFOMAPP_FUNCTION).map(info -> info[0] + ":" + info[1]).collect(Collectors.joining("\n")));
+                Utils.safeCreateAndWaitFor(() -> new ListFrame("One or more mods do not implement Entrypoint!",
+                    BASIC_MOD_INFO,
+                    nonEntrypointMods.stream().map(MODINFOMAPP_FUNCTION).toArray(String[][]::new)));
+                return null;
+            }
         }
 
-        if(!mods.keySet().stream().map(ModLoader::validateMod).allMatch(Predicate.isEqual(true))) {
-            // TODO: Report Error
-            return null;
+        {
+            List<Mod> invalidMods = mods.keySet().stream().filter(mod -> !validateMod(mod)).collect(Collectors.toList());
+            if(!invalidMods.isEmpty()) {
+                System.err.println("The following mods are invalid:\n" + invalidMods.stream().map(MODINFOMAPP_FUNCTION).map(info -> info[0] + ":" + info[1]).collect(Collectors.joining("\n")));
+                Utils.safeCreateAndWaitFor(() -> new ListFrame("One or more mods are invalid!",
+                    BASIC_MOD_INFO,
+                    invalidMods.stream().map(MODINFOMAPP_FUNCTION).toArray(String[][]::new)));
+                return null;
+            }
         }
 
         if(mods.keySet().stream().map(Mod::id).distinct().count() != mods.size()) {
-            List<String> modIds = mods.keySet().stream().map(Mod::id).collect(Collectors.toList());
-            mods.keySet().stream().map(Mod::id).distinct().forEach(modIds::remove);
-            String overlappingId = modIds.get(0);
-            System.err.println("Multiple mods are installed with id: " + overlappingId + "!");
-            // TODO: Report Error
+            List<String> overlappingModIds = mods.keySet().stream().map(Mod::id).collect(Collectors.toList());
+            mods.keySet().stream().map(Mod::id).distinct().forEach(overlappingModIds::remove);
+            List<Mod> overlappingMods = mods.keySet().stream().filter(mod -> overlappingModIds.contains(mod.id())).collect(Collectors.toList());
+            System.err.println("The following mods have the same id:\n" + overlappingMods.stream().map(MODINFOMAPP_FUNCTION).map(info -> info[0] + ":" + info[1]).collect(Collectors.joining("\n")));
+            Utils.safeCreateAndWaitFor(() -> new ListFrame("One or more mods have the same id!",
+                BASIC_MOD_INFO,
+                overlappingMods.stream().map(MODINFOMAPP_FUNCTION).toArray(String[][]::new)));
             return null;
         }
 
@@ -75,9 +104,9 @@ final class ModLoader {
                     try {
                         entrypoints.add((Entrypoint)mods.get(mod).newInstance());
                     } catch(Exception e) {
-                        // TODO: Report Error
-                        System.err.println("Error loading mod: " + mod.id());
+                        System.err.println("Error loading mod: " + mod.id() + ":" + mod.version());
                         e.printStackTrace(System.err);
+                        Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod: " + mod.id() + ":" + mod.version(), e));
                         throw new RuntimeException(e);
                     }
                     loadedMods.add(mod);
@@ -89,8 +118,18 @@ final class ModLoader {
         } while(numLoadedMods.intValue() != 0 && !unloadedMods.isEmpty());
 
         if(unloadedMods.size() != 0) {
-            // TODO: Report Error
-            System.err.println("Missing Dependencies!");
+            Map<Mod, List<String>> missingDependencies = unloadedMods.stream().collect(Collectors.toMap(Function.identity(), mod -> getMissingDependenciesValidated(mod, loadedMods)));
+            System.err.println("Missing Dependencies:\n" + missingDependencies.entrySet().stream().map(entry ->
+                    entry.getKey().id() + ":" + entry.getKey().version() + ":\n" +
+                    entry.getValue().stream().collect(Collectors.joining("\n"))
+                ).collect(Collectors.joining("\n\n")));
+            Utils.safeCreateAndWaitFor(() -> new ListFrame("The following mods are missing one or more dependencies!",
+                new String[] {"Dependent Id", "Dependent Version", "Dependency"},
+                missingDependencies.entrySet().stream().map(entry -> entry.getValue().stream().map(dependency -> new String[] {
+                        entry.getKey().id(),
+                        entry.getKey().version(),
+                        dependency
+                    }).toArray(String[]::new)).flatMap(Arrays::stream).toArray(String[][]::new)));
             return null;
         }
 

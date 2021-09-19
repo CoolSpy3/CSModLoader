@@ -28,6 +28,7 @@ import javax.crypto.spec.SecretKeySpec;
 import com.coolspy3.csmodloader.GameArgs;
 import com.coolspy3.csmodloader.McUtils;
 import com.coolspy3.csmodloader.Utils;
+import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.interfaces.IOCommand;
 import com.coolspy3.csmodloader.interfaces.IOConsumer;
 
@@ -167,6 +168,7 @@ public class ConnectionHandler implements Runnable {
             }
         } catch(Exception e) {
             e.printStackTrace(System.err);
+            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(e));
         } finally {
             Utils.safe(iSocket::close);
             Utils.safe(oSocket::close);
@@ -260,7 +262,11 @@ public class ConnectionHandler implements Runnable {
                     byte[] verifyTokenEncrypted = Utils.readBytes(is);
                     byte[] verifyToken = Utils.noFail(() -> cipher.doFinal(verifyTokenEncrypted));
 
-                    McUtils.joinServerYggdrasil(accessToken, GameArgs.get().uuid.toString(), serverId, serverPublicKey, sharedSecret);
+                    try {
+                        McUtils.joinServerYggdrasil(accessToken, GameArgs.get().uuid.toString(), serverId, serverPublicKey, sharedSecret);
+                    } catch(IOException e) {
+                        Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Could not authenticate you with Mojang's servers! (Try restarting the program)", e));
+                    }
 
                     other.enableEncryption(new SecretKeySpec(Arrays.copyOf(sharedSecret, sharedSecret.length), "AES"));
                     Cipher recipher = Utils.noFail(() -> Cipher.getInstance(serverPublicKey.getAlgorithm()));

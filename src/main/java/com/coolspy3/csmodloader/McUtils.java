@@ -1,10 +1,7 @@
 package com.coolspy3.csmodloader;
 
-import java.io.File;
 import java.io.IOException;
 import java.math.BigInteger;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.PublicKey;
 import java.util.UUID;
@@ -14,26 +11,6 @@ import javax.crypto.spec.SecretKeySpec;
 import com.mojang.authlib.yggdrasil.request.JoinMinecraftServerRequest;
 
 public final class McUtils {
-
-    public static File getMcDirFile() {
-        return getMcDirPath().toFile();
-    }
-
-    public static Path getMcDirPath() {
-        String os = System.getProperty("os.name").toLowerCase();
-
-        if(os.contains("win")) {
-            return Paths.get(System.getenv("APPDATA"), ".minecraft");
-        } else if(os.contains("mac")) {
-            return Paths.get(System.getProperty("user.home"), "Library", "Application Support", "minecraft");
-        } else if(os.contains("nix") || os.contains("nux") || os.contains("aix")) {
-            return Paths.get(System.getProperty("user.home"), ".minecraft");
-        } else {
-            System.err.println("Unsupported OS!");
-            System.exit(1);
-            return null;
-        }
-    }
 
     public static Object[] joinServerYggdrasil(String accessToken, String selectedProfile, String serverId, PublicKey serverPublicKey, byte[] sharedSecret) throws IOException {
         MessageDigest digest = Utils.noFail(() -> MessageDigest.getInstance("SHA-1"));
