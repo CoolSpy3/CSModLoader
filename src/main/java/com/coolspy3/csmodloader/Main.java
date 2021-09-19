@@ -1,5 +1,6 @@
 package com.coolspy3.csmodloader;
 
+import java.io.File;
 import java.io.IOException;
 import java.net.ServerSocket;
 import java.net.Socket;
@@ -45,7 +46,7 @@ public class Main {
                 }
             }
         }
-        new GameArgs(gameDir, username, uuid).set();
+        new GameArgs(new File(gameDir), username, uuid).set();
         Config.load();
         KeyPair rsaKey;
         {
