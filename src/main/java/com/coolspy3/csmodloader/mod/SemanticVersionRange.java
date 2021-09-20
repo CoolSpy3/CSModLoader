@@ -18,28 +18,28 @@ public class SemanticVersionRange {
         this.lowerBound = version;
         this.lowerBoundExclusive = false;
         this.upperBound = version;
-        this. upperBoundExclusive = false;
+        this.upperBoundExclusive = false;
     }
 
     public SemanticVersionRange(boolean lowerBoundExclusive, SemanticVersion lowerBound) {
         this.lowerBound = lowerBound;
         this.lowerBoundExclusive = lowerBoundExclusive;
         this.upperBound = null;
-        this. upperBoundExclusive = true;
+        this.upperBoundExclusive = true;
     }
 
     public SemanticVersionRange(SemanticVersion upperBound, boolean upperBoundExclusive) {
         this.lowerBound = null;
         this.lowerBoundExclusive = true;
         this.upperBound = upperBound;
-        this. upperBoundExclusive = upperBoundExclusive;
+        this.upperBoundExclusive = upperBoundExclusive;
     }
 
     public SemanticVersionRange(boolean lowerBoundExclusive, SemanticVersion lowerBound, SemanticVersion upperBound, boolean upperBoundExclusive) {
         this.lowerBound = lowerBound;
         this.lowerBoundExclusive = lowerBoundExclusive;
         this.upperBound = upperBound;
-        this. upperBoundExclusive = upperBoundExclusive;
+        this.upperBoundExclusive = upperBoundExclusive;
     }
 
     public boolean contains(SemanticVersion version) {
