@@ -27,6 +27,7 @@ import org.apache.commons.io.IOUtils;
 public final class Utils {
 
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
+    public static final Runnable DO_NOTHING = () -> {};
 
     public static Byte[] box(byte[] arr) {
         Byte[] out = new Byte[arr.length];

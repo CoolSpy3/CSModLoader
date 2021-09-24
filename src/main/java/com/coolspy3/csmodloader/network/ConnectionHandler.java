@@ -180,7 +180,7 @@ public class ConnectionHandler implements Runnable {
         is.mark(length);
 
         blockPacket = false;
-        Runnable command = () -> {};
+        Runnable command = Utils.DO_NOTHING;
 
         byte[] packetData;
         if(compressionThreshhold == -1) {
@@ -189,8 +189,9 @@ public class ConnectionHandler implements Runnable {
             is.mark(length);
             int packetId = Utils.readVarInt(is);
             if(packetId == 0x03 || packetId == 0x46) {
-                setCompression(-1);
-                other.setCompression(-1);
+                int compressionThreshhold = Utils.readVarInt(is);
+                other.setCompression(compressionThreshhold);
+                command = () -> { setCompression(compressionThreshhold); };
             }
             if(packetId == 0x00) {
                 switch(state) {
@@ -302,7 +303,9 @@ public class ConnectionHandler implements Runnable {
                 decompressor.reset();
             }
         }
-        PacketHandler.handleRawPacket(this, packetData);
+        if(key != null && command == Utils.DO_NOTHING) {
+            PacketHandler.handleRawPacket(this, packetData);
+        }
         is.reset();
         byte[] packet = Utils.readNBytes(is, length);
         if(!blockPacket) {
