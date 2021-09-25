@@ -47,6 +47,7 @@ public class Main {
             }
         }
         new GameArgs(new File(gameDir), username, uuid).set();
+        Config.init();
         try {
             Config.load();
         } catch(IOException e) {

@@ -11,18 +11,23 @@ import com.google.gson.Gson;
 
 public class Config {
 
-    public String mcDir = Utils.noFail(McUtils.getMcDirFile()::getCanonicalPath);
+    static void init() {
+        cfgFile = GameArgs.get().gameDir.toPath().resolve("csmodloader.cfg.json").toFile();
+    }
 
     // Base Config Code
 
-    private static final File cfgFile = McUtils.getMcDirPath().resolve("csmodloader.cfg.json").toFile();
+    private static File cfgFile = null;
     private static Config INSTANCE = new Config();
 
     public static Config getInstance() {
         return INSTANCE;
     }
 
-    public static void load() throws IOException {
+    public static void load() throws IOException, IllegalStateException {
+        if(cfgFile == null) {
+            throw new IllegalStateException("Config has not been initialized");
+        }
         if(!cfgFile.exists()) {
             return;
         }
@@ -38,7 +43,10 @@ public class Config {
         }
     }
 
-    public static void save() throws IOException {
+    public static void save() throws IOException, IllegalStateException {
+        if(cfgFile == null) {
+            throw new IllegalStateException("Config has not been initialized");
+        }
         cfgFile.createNewFile();
         try(BufferedWriter writer = new BufferedWriter(new FileWriter(cfgFile))) {
             Gson gson = new Gson();
