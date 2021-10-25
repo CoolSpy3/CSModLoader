@@ -43,8 +43,8 @@ public class SemanticVersionRange {
     }
 
     public boolean contains(SemanticVersion version) {
-        int lowerCheck = lowerBound.compareTo(version);
-        int upperCheck = upperBound.compareTo(version);
+        int lowerCheck = lowerBound == null ? -1 : lowerBound.compareTo(version);
+        int upperCheck = upperBound == null ? 1 : upperBound.compareTo(version);
         return (lowerCheck == 0 ? !lowerBoundExclusive : lowerCheck < 0) && (upperCheck == 0 ? !upperBoundExclusive : upperCheck > 0);
     }
 
