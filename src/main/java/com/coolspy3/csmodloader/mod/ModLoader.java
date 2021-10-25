@@ -34,7 +34,9 @@ final class ModLoader {
 
     public static ArrayList<Entrypoint> loadMods() {
         HashMap<Mod, Class<?>> mods = new HashMap<>();
-        for(File file: GameArgs.get().gameDir.listFiles(new FileNameExtensionFilter("Jar Files", "jar")::accept)) {
+        File[] files =  GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(new FileNameExtensionFilter("Jar Files", "jar")::accept);
+        files = files == null ? new File[] {} : null;
+        for(File file: files) {
             try {
                 if(file.isDirectory()) {
                     continue;

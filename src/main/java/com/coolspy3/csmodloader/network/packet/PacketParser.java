@@ -59,19 +59,19 @@ public final class PacketParser {
         if(!specifications.containsKey(packetClass)) {
             throw new IllegalArgumentException("Unknown Specification: " + packetClass.getName());
         }
-        write((PacketSpec<T>)specifications.get(packetClass), os);
+        write(packet, (PacketSpec<T>)specifications.get(packetClass), os);
     }
 
-    public static <T extends Packet> void write(PacketSpec<T> spec, OutputStream os) throws IllegalArgumentException, IOException {
+    public static <T extends Packet> void write(T packet, PacketSpec<T> spec, OutputStream os) throws IllegalArgumentException, IOException {
         if(!specifications.containsKey(spec.getType())) {
             addSpecification(spec);
         }
         if(spec.customSerialization()) {
-            spec.write(os);
+            spec.write(packet, os);
             return;
         }
         Class<?>[] types = spec.types();
-        Object[] values = new Object[types.length];
+        Object[] values = packet.getValues();
         for(int i = 0; i < types.length; i++) {
             Class<?> type = types[i];
             if(!objectParsers.containsKey(type)) {

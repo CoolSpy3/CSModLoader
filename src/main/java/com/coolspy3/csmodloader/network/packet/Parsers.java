@@ -12,19 +12,17 @@ import com.coolspy3.csmodloader.Utils;
 public final class Parsers {
 
     public static ObjectParser<?>[] defaults() {
-        ObjectParser<Integer> intParser = ofNumber(4, ByteBuffer::putInt, ByteBuffer::getInt, Integer.class);
-        ObjectParser<Long> longParser = ofNumber(8, ByteBuffer::putLong, ByteBuffer::getLong, Long.class);
         return new ObjectParser[] {
             ObjectParser.of(b -> new Byte[] { (byte)(b ? 0x01 : 0x00) }, b -> b[0] == 0x01, 1, Boolean.class),
             ObjectParser.of(b -> new Byte[] { b }, b -> b[0], 1, Byte.class),
             ofNumber(2, ByteBuffer::putShort, ByteBuffer::getShort, Short.class),
-            intParser,
-            longParser,
+            ofNumber(4, ByteBuffer::putInt, ByteBuffer::getInt, Integer.class),
+            ofNumber(8, ByteBuffer::putLong, ByteBuffer::getLong, Long.class),
             ofNumber(4, ByteBuffer::putFloat, ByteBuffer::getFloat, Float.class),
             ofNumber(8, ByteBuffer::putDouble, ByteBuffer::getDouble, Double.class),
             ObjectParser.of(Utils::writeString, Utils::readString, String.class),
-            ObjectParser.wrapping(intParser, Packet.VAR_INT),
-            ObjectParser.wrapping(longParser, Packet.VAR_LONG),
+            ObjectParser.wrapping(ObjectParser.of(Utils::writeVarInt, Utils::readVarInt, Integer.class), Packet.VAR_INT),
+            ObjectParser.wrapping(ObjectParser.of(Utils::writeVarLong, Utils::readVarLong, Long.class), Packet.VAR_LONG),
             ObjectParser.of(
                 uid -> {
                     ByteBuffer buf = ByteBuffer.allocate(16);

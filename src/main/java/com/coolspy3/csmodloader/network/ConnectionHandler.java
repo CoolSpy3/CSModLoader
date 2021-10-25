@@ -250,7 +250,7 @@ public class ConnectionHandler implements Runnable {
                     safeWrite(baos);
 
                     ConnectionHandler handler = this;
-                    // Wait until the client enables encryption so that the next call to is.wait() will be decrypted
+                    // Wait until the client enables encryption so that the next call to is.() will be decrypted
                     command = () -> Utils.safe(() -> {synchronized(handler) { handler.wait(); }});
                 } else if(direction == PacketDirection.SERVERBOUND) {
                     blockPacket = true;

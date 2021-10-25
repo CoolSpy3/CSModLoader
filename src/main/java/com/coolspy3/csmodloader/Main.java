@@ -70,7 +70,7 @@ public class Main {
                     ConnectionHandler.start(client, server, "mc.hypixel.net", accessToken, rsaKey);
                 } catch (Exception e) {
                     e.printStackTrace(System.err);
-                    new TextAreaFrame(e);
+                    Utils.safe(() -> new TextAreaFrame(e));
                 }
             }
         } catch(IOException e) {

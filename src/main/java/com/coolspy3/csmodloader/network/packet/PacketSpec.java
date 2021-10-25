@@ -15,6 +15,6 @@ public interface PacketSpec<T extends Packet> {
     }
 
     public default T read(InputStream is) throws IOException { return PacketParser.read(this, is); }
-    public default void write(OutputStream os) throws IOException {}
+    public default void write(T packet, OutputStream os) throws IOException {}
 
 }

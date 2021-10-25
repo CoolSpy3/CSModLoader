@@ -12,10 +12,10 @@ public class SemanticVersion implements Comparable<SemanticVersion> {
     }
 
     public SemanticVersion(String version) throws IllegalArgumentException {
-        if(validate(version)) {
-            this.version = Stream.of(version.split(".")).mapToInt(Integer::parseInt).toArray();
+        if(!validate(version)) {
+            throw new IllegalArgumentException("Invalid Version: " + version);
         }
-        throw new IllegalArgumentException("Invalid Version: " + version);
+        this.version = Stream.of(version.split(".")).mapToInt(Integer::parseInt).toArray();
     }
 
     public static boolean validate(String version) {
