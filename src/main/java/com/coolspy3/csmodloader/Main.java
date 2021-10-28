@@ -58,7 +58,7 @@ public class Main {
         KeyPair rsaKey;
         {
             KeyPairGenerator generator = Utils.noFail(() -> KeyPairGenerator.getInstance("RSA"));
-            generator.initialize(1024, Utils.noFail(() -> SecureRandom.getInstanceStrong()));
+            generator.initialize(1024, Utils.noFail(SecureRandom::getInstanceStrong));
             rsaKey = generator.genKeyPair();
         }
         try(ServerSocket sc = new ServerSocket(25565)) {
