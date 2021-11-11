@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader;
+package com.coolspy3.csmodloader.util;
 
 import java.io.IOException;
 import java.math.BigInteger;

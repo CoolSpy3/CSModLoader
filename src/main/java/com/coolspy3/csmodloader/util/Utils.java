@@ -1,4 +1,4 @@
-package com.coolspy3.csmodloader;
+package com.coolspy3.csmodloader.util;
 
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
@@ -108,6 +108,14 @@ public final class Utils {
         }
     }
 
+    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func) {
+        return t -> Utils.safe(() -> func.apply(t));
+    }
+
+    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func, U defaultValue) {
+        return t -> Utils.safe(() -> func.apply(t), defaultValue);
+    }
+
     public static <T> T safe(ExceptionSupplier<T> func) {
         return safe(func, null);
     }
@@ -132,6 +140,10 @@ public final class Utils {
             e.printStackTrace(System.err);
             System.exit(1);
         }
+    }
+
+    public static <T, U> Function<T, U> noFail(ExceptionFunction<T, U> func) {
+        return t -> Utils.noFail(() -> func.apply(t));
     }
 
     public static <T> T noFail(ExceptionSupplier<T> func) {
@@ -182,9 +194,34 @@ public final class Utils {
         return out;
     }
 
+    public static void wrap(ExceptionRunnable func) throws WrapperException {
+        try {
+            func.run();
+        } catch(Exception e) {
+            throw new WrapperException(e);
+        }
+    }
+
+    public static <T, U> Function<T, U> wrap(ExceptionFunction<T, U> func) throws WrapperException {
+        return t -> Utils.wrap(() -> func.apply(t));
+    }
+
+    public static <T> T wrap(ExceptionSupplier<T> func) throws WrapperException {
+        try {
+            return func.get();
+        } catch(Exception e) {
+            throw new WrapperException(e);
+        }
+    }
+
     @FunctionalInterface
     public static interface ExceptionRunnable {
         public void run() throws Exception;
+    }
+
+    @FunctionalInterface
+    public static interface ExceptionFunction<T, U> {
+        public U apply(T t) throws Exception;
     }
 
     @FunctionalInterface

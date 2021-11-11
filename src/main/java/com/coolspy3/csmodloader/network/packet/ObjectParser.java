@@ -5,9 +5,9 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.function.Function;
 
-import com.coolspy3.csmodloader.Utils;
 import com.coolspy3.csmodloader.interfaces.IOBiConsumer;
 import com.coolspy3.csmodloader.interfaces.IOFunction;
+import com.coolspy3.csmodloader.util.Utils;
 
 public interface ObjectParser<T> {
 

@@ -4,7 +4,7 @@ import java.io.ByteArrayInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 
-import com.coolspy3.csmodloader.Utils;
+import com.coolspy3.csmodloader.util.Utils;
 
 public class PacketHandler {
 

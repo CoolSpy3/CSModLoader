@@ -6,7 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JScrollPane;
 import javax.swing.JTextArea;
 
-import com.coolspy3.csmodloader.Utils;
+import com.coolspy3.csmodloader.util.Utils;
 
 
 public class TextAreaFrame extends JFrame {

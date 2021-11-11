@@ -23,9 +23,10 @@ import java.util.stream.Stream;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.coolspy3.csmodloader.GameArgs;
-import com.coolspy3.csmodloader.Utils;
 import com.coolspy3.csmodloader.gui.ListFrame;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
+import com.coolspy3.csmodloader.util.Utils;
+import com.coolspy3.csmodloader.util.WrapperException;
 
 final class ModLoader {
 
@@ -34,29 +35,19 @@ final class ModLoader {
 
     public static ArrayList<Entrypoint> loadMods() {
         HashMap<Mod, Class<?>> mods = new HashMap<>();
-        File[] files =  GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(new FileNameExtensionFilter("Jar Files", "jar")::accept);
+        File[] files = GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(((Predicate<File>)new FileNameExtensionFilter("Jar Files", "jar")::accept).and(File::isFile)::test);
         files = files == null ? new File[] {} : null;
-        for(File file: files) {
+        {
             try {
-                if(file.isDirectory()) {
-                    continue;
-                }
-                for(Class<?> c: loadJar(file)) {
+                for(Class<?> c: loadJar(files)) {
                     Mod mod = c.getAnnotation(Mod.class);
                     if(mod != null) {
                         mods.put(mod, c);
                     }
                 }
-            } catch(ClassNotFoundException | IOException e) {
-                String filePath;
-                try {
-                    filePath = file.getCanonicalPath();
-                } catch(IOException exc) {
-                    filePath = file.getAbsolutePath();
-                }
-                String tmp = filePath;
+            } catch(IOException | ModLoadingException e) {
                 e.printStackTrace(System.err);
-                Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod file: " + tmp + "!", e));
+                Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod file!", e));
                 return null;
             }
         }
@@ -192,18 +183,35 @@ final class ModLoader {
         return true;
     }
 
-    public static Class<?>[] loadJar(File file) throws ClassNotFoundException, IOException {
+    public static Class<?>[] loadJar(File... files) throws IOException, ModLoadingException {
         ArrayList<Class<?>> classes = new ArrayList<>();
-        try(JarFile jar = new JarFile(file);
-            URLClassLoader cl = new URLClassLoader(new URL[] {new URL("jar:file:" + file.getCanonicalPath() + "!/")})) {
-            for(JarEntry entry: Collections.list(jar.entries())) {
-                String name = entry.getName();
-                if(entry.isDirectory() || !name.endsWith(".class")) {
-                    continue;
+        ArrayList<String> loadedClasses = new ArrayList<>();
+        try(URLClassLoader cl = new URLClassLoader(Arrays.stream(files).map(Utils.wrap(File::getCanonicalPath)).map(filename -> "jar:file:" + filename +"!/").map(Utils.wrap(URL::new)).toArray(URL[]::new))) {
+            for(File file: files) {
+                try(JarFile jar = new JarFile(file)) {
+                    for(JarEntry entry: Collections.list(jar.entries())) {
+                        String name = entry.getName();
+                        if(entry.isDirectory() || !name.endsWith(".class") || loadedClasses.contains(name)) {
+                            continue;
+                        }
+                        loadedClasses.add(name);
+                        classes.add(cl.loadClass(name.substring(0, name.length()-6)));
+                    }
+                } catch(ClassNotFoundException | IOException e) {
+                    throw new ModLoadingException(Utils.safe(file::getCanonicalPath, file.getAbsolutePath()), e);
                 }
-                classes.add(cl.loadClass(name.substring(0, name.length()-6)));
             }
             return classes.toArray(new Class[0]);
+        } catch(WrapperException e) {
+            try {
+                throw e.getCause();
+            } catch(IOException exc) {
+                throw exc;
+            } catch(RuntimeException exc) {
+                throw exc;
+            } catch(Throwable t) {
+                throw e;
+            }
         }
     }
 

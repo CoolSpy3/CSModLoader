@@ -13,6 +13,7 @@ import java.util.UUID;
 
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.network.ConnectionHandler;
+import com.coolspy3.csmodloader.util.Utils;
 
 public class Main {
 

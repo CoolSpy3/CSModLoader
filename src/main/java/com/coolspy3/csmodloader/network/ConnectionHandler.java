@@ -26,11 +26,11 @@ import javax.crypto.spec.IvParameterSpec;
 import javax.crypto.spec.SecretKeySpec;
 
 import com.coolspy3.csmodloader.GameArgs;
-import com.coolspy3.csmodloader.McUtils;
-import com.coolspy3.csmodloader.Utils;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.interfaces.IOCommand;
 import com.coolspy3.csmodloader.interfaces.IOConsumer;
+import com.coolspy3.csmodloader.util.McUtils;
+import com.coolspy3.csmodloader.util.Utils;
 
 public class ConnectionHandler implements Runnable {
 

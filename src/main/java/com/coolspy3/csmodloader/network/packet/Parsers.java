@@ -7,7 +7,7 @@ import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.stream.Stream;
 
-import com.coolspy3.csmodloader.Utils;
+import com.coolspy3.csmodloader.util.Utils;
 
 public final class Parsers {
 
