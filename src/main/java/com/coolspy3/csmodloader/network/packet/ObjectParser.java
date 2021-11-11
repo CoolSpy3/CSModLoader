@@ -9,112 +9,146 @@ import com.coolspy3.csmodloader.interfaces.IOBiConsumer;
 import com.coolspy3.csmodloader.interfaces.IOFunction;
 import com.coolspy3.csmodloader.util.Utils;
 
-public interface ObjectParser<T> {
+public interface ObjectParser<T>
+{
 
-    public static <T, U> ObjectParser<U> mapping(ObjectParser<T> parser, Function<U, T> encMapper, Function<T, U> decMapper, Class<U> type) {
-        return new ObjectParser<U>() {
+    public static <T, U> ObjectParser<U> mapping(ObjectParser<T> parser, Function<U, T> encMapper,
+            Function<T, U> decMapper, Class<U> type)
+    {
+        return new ObjectParser<U>()
+        {
 
             @Override
-            public U decode(InputStream is) throws IOException {
+            public U decode(InputStream is) throws IOException
+            {
                 return decMapper.apply(parser.decode(is));
             }
 
             @Override
-            public void encode(U obj, OutputStream os) throws IOException {
+            public void encode(U obj, OutputStream os) throws IOException
+            {
                 parser.encode(encMapper.apply(obj), os);
             }
 
             @Override
-            public Class<U> getType() {
+            public Class<U> getType()
+            {
                 return type;
             }
         };
     }
 
-    public static <T> ObjectParser<T> of(Function<T, Byte[]> encFunc, IOFunction<InputStream, T> decFunc, Class<T> type) {
-        return new ObjectParser<T>() {
+    public static <T> ObjectParser<T> of(Function<T, Byte[]> encFunc,
+            IOFunction<InputStream, T> decFunc, Class<T> type)
+    {
+        return new ObjectParser<T>()
+        {
             @Override
-            public T decode(InputStream is) throws IOException {
+            public T decode(InputStream is) throws IOException
+            {
                 return decFunc.run(is);
             }
 
             @Override
-            public void encode(T obj, OutputStream os) throws IOException {
+            public void encode(T obj, OutputStream os) throws IOException
+            {
                 os.write(Utils.unbox(encFunc.apply(obj)));
             }
 
             @Override
-            public Class<?> getType() {
+            public Class<?> getType()
+            {
                 return type;
             }
         };
     }
 
-    public static <T> ObjectParser<T> of(Function<T, Byte[]> encFunc, Function<Byte[], T> decFunc, int length, Class<T> type) {
-        return new ObjectParser<T>() {
+    public static <T> ObjectParser<T> of(Function<T, Byte[]> encFunc, Function<Byte[], T> decFunc,
+            int length, Class<T> type)
+    {
+        return new ObjectParser<T>()
+        {
             @Override
-            public T decode(InputStream is) throws IOException {
+            public T decode(InputStream is) throws IOException
+            {
                 return decFunc.apply(Utils.box(Utils.readNBytes(is, length)));
             }
 
             @Override
-            public void encode(T obj, OutputStream os) throws IOException {
+            public void encode(T obj, OutputStream os) throws IOException
+            {
                 os.write(Utils.unbox(encFunc.apply(obj)));
             }
 
             @Override
-            public Class<?> getType() {
+            public Class<?> getType()
+            {
                 return type;
             }
         };
     }
 
-    public static <T> ObjectParser<T> of(IOBiConsumer<T, OutputStream> encFunc, IOFunction<InputStream, T> decFunc, Class<T> type) {
-        return new ObjectParser<T>() {
+    public static <T> ObjectParser<T> of(IOBiConsumer<T, OutputStream> encFunc,
+            IOFunction<InputStream, T> decFunc, Class<T> type)
+    {
+        return new ObjectParser<T>()
+        {
             @Override
-            public T decode(InputStream is) throws IOException {
+            public T decode(InputStream is) throws IOException
+            {
                 return decFunc.run(is);
             }
 
             @Override
-            public void encode(T obj, OutputStream os) throws IOException {
+            public void encode(T obj, OutputStream os) throws IOException
+            {
                 encFunc.run(obj, os);
             }
 
             @Override
-            public Class<?> getType() {
+            public Class<?> getType()
+            {
                 return type;
             }
         };
     }
 
-    public static <T, U extends WrapperType<T>> ObjectParser<T> wrapping(ObjectParser<T> parser, Class<U> type) {
-        return new ObjectParser<T>() {
+    public static <T, U extends WrapperType<T>> ObjectParser<T> wrapping(ObjectParser<T> parser,
+            Class<U> type)
+    {
+        return new ObjectParser<T>()
+        {
 
             @Override
-            public T decode(InputStream is) throws IOException {
+            public T decode(InputStream is) throws IOException
+            {
                 return parser.decode(is);
             }
 
             @Override
-            public void encode(T obj, OutputStream os) throws IOException {
+            public void encode(T obj, OutputStream os) throws IOException
+            {
                 parser.encode(obj, os);
             }
 
             @Override
-            public Class<?> getType() {
+            public Class<?> getType()
+            {
                 return type;
             }
         };
     }
 
     public T decode(InputStream is) throws IOException;
+
     public void encode(T obj, OutputStream os) throws IOException;
+
     public Class<?> getType();
 
     @SuppressWarnings("unchecked")
-    public default void encodeObject(Object obj, OutputStream os) throws IOException {
-        encode((T)obj, os);
+    public default void encodeObject(Object obj, OutputStream os) throws IOException
+    {
+        encode((T) obj, os);
     }
 
 }

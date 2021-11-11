@@ -24,48 +24,64 @@ import com.google.gson.Gson;
 
 import org.apache.commons.io.IOUtils;
 
-public final class Utils {
+public final class Utils
+{
 
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
     public static final Runnable DO_NOTHING = () -> {};
 
-    public static Byte[] box(byte[] arr) {
+    public static Byte[] box(byte[] arr)
+    {
         Byte[] out = new Byte[arr.length];
-        for(int i = 0; i < arr.length; i++) {
+
+        for (int i = 0; i < arr.length; i++)
             out[i] = arr[i];
-        }
+
         return out;
     }
 
-    public static void createAndWaitFor(Supplier<Frame> createFunc) throws InterruptedException {
+    public static void createAndWaitFor(Supplier<Frame> createFunc) throws InterruptedException
+    {
         Object lock = new Object();
-        SwingUtilities.invokeLater(() -> createFunc.get().addWindowListener(new WindowAdapter() {
-            public void windowClosing(java.awt.event.WindowEvent e) {
-                synchronized(lock) {
+
+        SwingUtilities.invokeLater(() -> createFunc.get().addWindowListener(new WindowAdapter()
+        {
+            public void windowClosing(java.awt.event.WindowEvent e)
+            {
+                synchronized (lock)
+                {
                     lock.notifyAll();
                 }
             }
         }));
-        synchronized(lock) {
+
+        synchronized (lock)
+        {
             lock.wait();
         }
     }
 
-    public static <T> T fromBytes(byte[] bytes, Function<ByteBuffer, T> convFunc) {
+    public static <T> T fromBytes(byte[] bytes, Function<ByteBuffer, T> convFunc)
+    {
         return convFunc.apply(ByteBuffer.wrap(bytes));
     }
 
-    public static <T> byte[] getBytes(T num, int length, BiFunction<ByteBuffer, T, ByteBuffer> convFunc) {
+    public static <T> byte[] getBytes(T num, int length,
+            BiFunction<ByteBuffer, T, ByteBuffer> convFunc)
+    {
         return convFunc.apply(ByteBuffer.allocate(length), num).array();
     }
 
-    public static String getStackTrace(Exception e) {
+    public static String getStackTrace(Exception e)
+    {
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(bais, true));
+
         return new String(bais.toByteArray(), UTF_8);
     }
 
-    public static Object[] post(String url, Object payload) throws IOException {
+    public static Object[] post(String url, Object payload) throws IOException
+    {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
 
         conn.setConnectTimeout(15000);
@@ -76,208 +92,273 @@ public final class Utils {
         conn.setRequestProperty("Content-Type", "application/json; charset=utf-8");
         conn.setDoOutput(true);
 
-        byte[] requestBytes = (payload instanceof String ? (String)payload : new Gson().toJson(payload)).getBytes(Utils.UTF_8);
+        byte[] requestBytes =
+                (payload instanceof String ? (String) payload : new Gson().toJson(payload))
+                        .getBytes(Utils.UTF_8);
         conn.setRequestProperty("Content-Length", "" + requestBytes.length);
 
-        try (OutputStream connos = conn.getOutputStream()) {
+        try (OutputStream connos = conn.getOutputStream())
+        {
             connos.write(requestBytes);
             connos.flush();
         }
 
         int responseCode = conn.getResponseCode();
-        try (InputStream is = conn.getInputStream()) {
-            return new Object[] { responseCode, IOUtils.toString(is, Utils.UTF_8) };
+
+        try (InputStream is = conn.getInputStream())
+        {
+            return new Object[] {responseCode, IOUtils.toString(is, Utils.UTF_8)};
         }
     }
 
-    public static void printHex(byte[] arr) {
+    public static void printHex(byte[] arr)
+    {
         String str = "[";
-        for (int i = 0; i < arr.length; i++) {
+
+        for (int i = 0; i < arr.length; i++)
+        {
             str += String.format("%02x", arr[i]);
-            if (i < arr.length - 1) {
-                str += ", ";
-            }
+            if (i < arr.length - 1) str += ", ";
         }
+
         System.out.println(str + "]");
     }
 
-    public static void safe(ExceptionRunnable func) {
-        try {
+    public static void safe(ExceptionRunnable func)
+    {
+        try
+        {
             func.run();
-        } catch (Exception e) {
         }
+        catch (Exception e)
+        {}
     }
 
-    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func) {
+    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func)
+    {
         return t -> Utils.safe(() -> func.apply(t));
     }
 
-    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func, U defaultValue) {
+    public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func, U defaultValue)
+    {
         return t -> Utils.safe(() -> func.apply(t), defaultValue);
     }
 
-    public static <T> T safe(ExceptionSupplier<T> func) {
+    public static <T> T safe(ExceptionSupplier<T> func)
+    {
         return safe(func, null);
     }
 
-    public static <T> T safe(ExceptionSupplier<T> func, T defaultValue) {
-        try {
+    public static <T> T safe(ExceptionSupplier<T> func, T defaultValue)
+    {
+        try
+        {
             return func.get();
-        } catch (Exception e) {
+        }
+        catch (Exception e)
+        {
             return defaultValue;
         }
     }
 
-    public static void safeCreateAndWaitFor(Supplier<Frame> createFunc) {
+    public static void safeCreateAndWaitFor(Supplier<Frame> createFunc)
+    {
         safe(() -> createAndWaitFor(createFunc));
     }
 
-    public static void noFail(ExceptionRunnable func) {
-        try {
+    public static void noFail(ExceptionRunnable func)
+    {
+        try
+        {
             func.run();
-        } catch (Exception e) {
-            safeCreateAndWaitFor(() -> new TextAreaFrame("If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(", e));
+        }
+        catch (Exception e)
+        {
+            safeCreateAndWaitFor(() -> new TextAreaFrame(
+                    "If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(",
+                    e));
+
             e.printStackTrace(System.err);
             System.exit(1);
         }
     }
 
-    public static <T, U> Function<T, U> noFail(ExceptionFunction<T, U> func) {
+    public static <T, U> Function<T, U> noFail(ExceptionFunction<T, U> func)
+    {
         return t -> Utils.noFail(() -> func.apply(t));
     }
 
-    public static <T> T noFail(ExceptionSupplier<T> func) {
-        try {
+    public static <T> T noFail(ExceptionSupplier<T> func)
+    {
+        try
+        {
             return func.get();
-        } catch (Exception e) {
-            safeCreateAndWaitFor(() -> new TextAreaFrame("If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(", e));
+        }
+        catch (Exception e)
+        {
+            safeCreateAndWaitFor(() -> new TextAreaFrame(
+                    "If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(",
+                    e));
+
             e.printStackTrace(System.err);
             System.exit(1);
+
             return null;
         }
     }
 
-    public static byte readByte(InputStream is) throws IOException {
+    public static byte readByte(InputStream is) throws IOException
+    {
         int i = is.read();
-        if (i == -1) {
-            throw new EOFException();
-        }
+        if (i == -1) throw new EOFException();
+
         return (byte) i;
     }
 
-    public static void writeByte(long b, OutputStream os) throws IOException {
+    public static void writeByte(long b, OutputStream os) throws IOException
+    {
         os.write((byte) b);
     }
 
-    public static byte[] readBytes(InputStream is) throws IOException {
+    public static byte[] readBytes(InputStream is) throws IOException
+    {
         return readNBytes(is, readVarInt(is));
     }
 
-    public static void writeBytes(byte[] bytes, OutputStream os) throws IOException {
+    public static void writeBytes(byte[] bytes, OutputStream os) throws IOException
+    {
         writeVarInt(bytes.length, os);
         os.write(bytes);
     }
 
-    public static String readString(InputStream is) throws IOException {
+    public static String readString(InputStream is) throws IOException
+    {
         return new String(readBytes(is), UTF_8);
     }
 
-    public static void writeString(String str, OutputStream os) throws IOException {
+    public static void writeString(String str, OutputStream os) throws IOException
+    {
         writeBytes(str.getBytes(UTF_8), os);
     }
 
-    public static byte[] unbox(Byte[] arr) {
+    public static byte[] unbox(Byte[] arr)
+    {
         byte[] out = new byte[arr.length];
-        for(int i = 0; i < arr.length; i++) {
+
+        for (int i = 0; i < arr.length; i++)
             out[i] = arr[i];
-        }
+
         return out;
     }
 
-    public static void wrap(ExceptionRunnable func) throws WrapperException {
-        try {
+    public static void wrap(ExceptionRunnable func) throws WrapperException
+    {
+        try
+        {
             func.run();
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new WrapperException(e);
         }
     }
 
-    public static <T, U> Function<T, U> wrap(ExceptionFunction<T, U> func) throws WrapperException {
+    public static <T, U> Function<T, U> wrap(ExceptionFunction<T, U> func) throws WrapperException
+    {
         return t -> Utils.wrap(() -> func.apply(t));
     }
 
-    public static <T> T wrap(ExceptionSupplier<T> func) throws WrapperException {
-        try {
+    public static <T> T wrap(ExceptionSupplier<T> func) throws WrapperException
+    {
+        try
+        {
             return func.get();
-        } catch(Exception e) {
+        }
+        catch (Exception e)
+        {
             throw new WrapperException(e);
         }
     }
 
     @FunctionalInterface
-    public static interface ExceptionRunnable {
+    public static interface ExceptionRunnable
+    {
         public void run() throws Exception;
     }
 
     @FunctionalInterface
-    public static interface ExceptionFunction<T, U> {
+    public static interface ExceptionFunction<T, U>
+    {
         public U apply(T t) throws Exception;
     }
 
     @FunctionalInterface
-    public static interface ExceptionSupplier<T> {
+    public static interface ExceptionSupplier<T>
+    {
         public T get() throws Exception;
     }
 
-    public static byte[] readNBytes(InputStream is, int len) throws IOException {
+    public static byte[] readNBytes(InputStream is, int len) throws IOException
+    {
         byte[] buf = new byte[len];
         int nBytesRead = 0;
-        while(nBytesRead < len) {
+
+        while (nBytesRead < len)
             nBytesRead += is.read(buf, nBytesRead, len - nBytesRead);
-        }
+
         return buf;
     }
 
     // Credit: https://wiki.vg/index.php?title=Protocol&oldid=7368#With_compression
-    public static int readVarInt(InputStream is) throws IOException {
+    public static int readVarInt(InputStream is) throws IOException
+    {
         int value = 0;
         int bitOffset = 0;
         byte currentByte;
-        do {
-            if (bitOffset == 35)
-                throw new RuntimeException("VarInt is too big");
+
+        do
+        {
+            if (bitOffset == 35) throw new RuntimeException("VarInt is too big");
 
             currentByte = readByte(is);
             // System.out.println(String.format("%02x", currentByte));
             value |= (currentByte & 0b01111111) << bitOffset;
 
             bitOffset += 7;
-        } while ((currentByte & 0b10000000) != 0);
+        }
+        while ((currentByte & 0b10000000) != 0);
 
         return value;
     }
 
-    public static long readVarLong(InputStream is) throws IOException {
+    public static long readVarLong(InputStream is) throws IOException
+    {
         long value = 0;
         int bitOffset = 0;
         byte currentByte;
-        do {
-            if (bitOffset == 70)
-                throw new RuntimeException("VarLong is too big");
+
+        do
+        {
+            if (bitOffset == 70) throw new RuntimeException("VarLong is too big");
 
             currentByte = readByte(is);
             value |= (currentByte & 0b01111111) << bitOffset;
 
             bitOffset += 7;
-        } while ((currentByte & 0b10000000) != 0);
+        }
+        while ((currentByte & 0b10000000) != 0);
 
         return value;
     }
 
-    public static void writeVarInt(int value, OutputStream os) throws IOException {
-        while (true) {
-            if ((value & 0xFFFFFF80) == 0) {
+    public static void writeVarInt(int value, OutputStream os) throws IOException
+    {
+        while (true)
+        {
+            if ((value & 0xFFFFFF80) == 0)
+            {
                 writeByte(value, os);
+
                 return;
             }
 
@@ -289,10 +370,14 @@ public final class Utils {
         }
     }
 
-    public static void writeVarLong(long value, OutputStream os) throws IOException {
-        while (true) {
-            if ((value & 0xFFFFFFFFFFFFFF80L) == 0) {
+    public static void writeVarLong(long value, OutputStream os) throws IOException
+    {
+        while (true)
+        {
+            if ((value & 0xFFFFFFFFFFFFFF80L) == 0)
+            {
                 writeByte(value, os);
+
                 return;
             }
 
@@ -304,11 +389,15 @@ public final class Utils {
         }
     }
 
-    public static int varIntLen(int value) {
+    public static int varIntLen(int value)
+    {
         int len = 0;
-        while (true) {
-            if ((value & 0xFFFFFF80) == 0) {
+        while (true)
+        {
+            if ((value & 0xFFFFFF80) == 0)
+            {
                 len++;
+
                 return len;
             }
 
@@ -320,11 +409,15 @@ public final class Utils {
         }
     }
 
-    public static int varLongLen(long value) {
+    public static int varLongLen(long value)
+    {
         int len = 0;
-        while (true) {
-            if ((value & 0xFFFFFFFFFFFFFF80L) == 0) {
+        while (true)
+        {
+            if ((value & 0xFFFFFFFFFFFFFF80L) == 0)
+            {
                 len++;
+
                 return len;
             }
 
@@ -336,6 +429,6 @@ public final class Utils {
         }
     }
 
-    private Utils() {
-    }
+    private Utils()
+    {}
 }
