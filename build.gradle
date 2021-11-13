@@ -18,16 +18,9 @@ run {
     enableAssertions = true
 }
 
-// repositories {
-//     maven {
-//         url 'https://jitpack.io'
-//     }
-// }
-
 dependencies {
     implementation 'com.google.code.gson:gson:2.8.8'
     implementation group: 'commons-io', name: 'commons-io', version: '2.6'
-    // implementation "com.github.KevinPriv:MojangAPI:1.0"
     testImplementation     'junit:junit:4.13'
 }
 
