@@ -63,7 +63,9 @@ public final class ModLoader
             catch (IOException | ModLoadingException e)
             {
                 e.printStackTrace(System.err);
+
                 Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod file!", e));
+
                 return null;
             }
         }

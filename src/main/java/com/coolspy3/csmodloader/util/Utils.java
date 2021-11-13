@@ -21,6 +21,9 @@ import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
+import com.coolspy3.csmodloader.interfaces.ExceptionFunction;
+import com.coolspy3.csmodloader.interfaces.ExceptionRunnable;
+import com.coolspy3.csmodloader.interfaces.ExceptionSupplier;
 
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
@@ -139,6 +142,47 @@ public final class Utils
                 .toString();
 
         return generatedString;
+    }
+
+    public static void reporting(ExceptionRunnable func)
+    {
+        try
+        {
+            func.run();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+        }
+    }
+
+    public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func)
+    {
+        return t -> Utils.reporting(() -> func.apply(t));
+    }
+
+    public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func, U defaultValue)
+    {
+        return t -> Utils.reporting(() -> func.apply(t), defaultValue);
+    }
+
+    public static <T> T reporting(ExceptionSupplier<T> func)
+    {
+        return reporting(func, null);
+    }
+
+    public static <T> T reporting(ExceptionSupplier<T> func, T defaultValue)
+    {
+        try
+        {
+            return func.get();
+        }
+        catch (Exception e)
+        {
+            e.printStackTrace();
+
+            return defaultValue;
+        }
     }
 
     public static void safe(ExceptionRunnable func)
@@ -295,24 +339,6 @@ public final class Utils
         {
             throw new WrapperException(e);
         }
-    }
-
-    @FunctionalInterface
-    public static interface ExceptionRunnable
-    {
-        public void run() throws Exception;
-    }
-
-    @FunctionalInterface
-    public static interface ExceptionFunction<T, U>
-    {
-        public U apply(T t) throws Exception;
-    }
-
-    @FunctionalInterface
-    public static interface ExceptionSupplier<T>
-    {
-        public T get() throws Exception;
     }
 
     public static byte[] readNBytes(InputStream is, int len) throws IOException

@@ -74,7 +74,9 @@ public class Main
         catch (IOException e)
         {
             e.printStackTrace();
+
             Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Failed to load config file", e));
+
             System.exit(1);
         }
 

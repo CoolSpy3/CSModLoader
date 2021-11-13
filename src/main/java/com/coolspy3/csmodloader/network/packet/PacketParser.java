@@ -31,7 +31,7 @@ public final class PacketParser
         objectParsers.put(parser.getType(), parser);
     }
 
-    public static int getClassId(Class<? extends Packet> packetClass)
+    public static int getClassId(Class<? extends Packet> packetClass) throws NullPointerException
     {
         return packetIds.get(packetClass);
     }

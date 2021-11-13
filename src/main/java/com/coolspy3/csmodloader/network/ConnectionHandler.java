@@ -217,6 +217,7 @@ public class ConnectionHandler implements Runnable
         catch (Exception e)
         {
             e.printStackTrace(System.err);
+
             Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(e));
         }
         finally
@@ -403,8 +404,7 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        if (key != null && command == Utils.DO_NOTHING)
-            packetHandler.handleRawPacket(this, packetData);
+        if (key != null && command == Utils.DO_NOTHING) packetHandler.handleRawPacket(packetData);
 
         is.reset();
 
