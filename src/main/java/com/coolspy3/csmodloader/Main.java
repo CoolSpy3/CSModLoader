@@ -2,18 +2,15 @@ package com.coolspy3.csmodloader;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.ServerSocket;
-import java.net.Socket;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
-import javax.swing.SwingUtilities;
 import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
-import com.coolspy3.csmodloader.network.ConnectionHandler;
+import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
 public class Main
@@ -83,29 +80,8 @@ public class Main
             rsaKey = generator.genKeyPair();
         }
 
-        try (ServerSocket sc = new ServerSocket(25565))
-        {
-            while (true)
-            {
-                try
-                {
-                    Socket client = sc.accept();
-                    // Socket server = new Socket("mc.hypixel.net", 25565);
-                    Socket server = new Socket("localhost", 11223);
-                    ConnectionHandler.start(client, server, "mc.hypixel.net", accessToken, rsaKey);
-                }
-                catch (Exception e)
-                {
-                    e.printStackTrace(System.err);
-                    Utils.safe(() -> new TextAreaFrame(e));
-                }
-            }
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace();
-            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(e));
-            System.exit(1);
-        }
+        ServerInstance.init(accessToken, rsaKey);
+
+        MainWindow.create();
     }
 }

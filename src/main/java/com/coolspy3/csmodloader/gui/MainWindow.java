@@ -8,6 +8,9 @@ import javax.swing.SwingUtilities;
 
 public class MainWindow extends JFrame
 {
+
+    private static final long serialVersionUID = 5717822378368714313L;
+
     private static MainWindow window;
 
     private JPanel content;

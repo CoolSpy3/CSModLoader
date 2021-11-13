@@ -6,7 +6,7 @@ import javax.swing.JFrame;
 import javax.swing.JLabel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
-import javax.swing.table.DefaultTableModel;
+import com.coolspy3.csmodloader.util.UneditableTableModel;
 
 
 public class ListFrame extends JFrame
@@ -24,18 +24,7 @@ public class ListFrame extends JFrame
         setLayout(new BorderLayout());
         setResizable(false);
 
-        JTable table = new JTable(new DefaultTableModel(data, columnNames)
-        {
-
-            private static final long serialVersionUID = 3279251307637537531L;
-
-            @Override
-            public boolean isCellEditable(int row, int column)
-            {
-                return false;
-            }
-
-        });
+        JTable table = new JTable(new UneditableTableModel(data, columnNames));
         table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF);
 
         add(new JLabel(message), BorderLayout.NORTH);

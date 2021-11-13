@@ -6,7 +6,11 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
-
+import java.util.HashMap;
+import javax.swing.SwingUtilities;
+import com.coolspy3.csmodloader.gui.Server;
+import com.coolspy3.csmodloader.gui.TextAreaFrame;
+import com.coolspy3.csmodloader.util.ShiftableList;
 import com.google.gson.Gson;
 
 public class Config
@@ -15,6 +19,24 @@ public class Config
     static void init()
     {
         cfgFile = GameArgs.get().gameDir.toPath().resolve("csmodloader.cfg.json").toFile();
+    }
+
+    public ShiftableList<String> serverList = new ShiftableList<>();
+    public HashMap<String, Server> servers = new HashMap<>();
+
+    public static void safeSave()
+    {
+        try
+        {
+            save();
+        }
+        catch (IOException e)
+        {
+            e.printStackTrace(System.err);
+
+            SwingUtilities.invokeLater(
+                    () -> new TextAreaFrame("Error occured while saving configuration!", e));
+        }
     }
 
     // Base Config Code

@@ -483,7 +483,7 @@ public class ConnectionHandler implements Runnable
         safeWrite(baos);
     }
 
-    public static void start(Socket client, Socket server, String host, String accessToken,
+    static Connection start(Socket client, Socket server, String host, String accessToken,
             KeyPair key) throws IOException
     {
         ConnectionHandler c2s = new ConnectionHandler(client, server, host, accessToken,
@@ -496,6 +496,11 @@ public class ConnectionHandler implements Runnable
 
         s2c.startInNewThread();
         c2s.startInNewThread();
+
+        return new Connection(() -> {
+            Utils.safe(client::close);
+            Utils.safe(server::close);
+        }, () -> !client.isClosed() || !server.isClosed());
     }
 
     public static enum State

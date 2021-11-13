@@ -3,11 +3,19 @@ package com.coolspy3.csmodloader.gui;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import javax.swing.JButton;
 import javax.swing.JPanel;
+import javax.swing.JScrollPane;
+import javax.swing.JTable;
+import com.coolspy3.csmodloader.mod.ModLoader;
+import com.coolspy3.csmodloader.util.UneditableTableModel;
 
 class ModsGUI extends JPanel implements ActionListener
 {
+
+    private static final long serialVersionUID = 8508975564412920622L;
 
     private final JButton backButton;
 
@@ -16,6 +24,20 @@ class ModsGUI extends JPanel implements ActionListener
         setLayout(new BorderLayout());
 
         add(backButton = new JButton("Back"), BorderLayout.NORTH);
+
+        add(new JScrollPane(new JTable(new UneditableTableModel(
+
+                ModLoader.getModList().stream()
+                        .map(mod -> new String[] {mod.name(), mod.id(), mod.version(),
+                                mod.description(),
+                                Arrays.stream(mod.dependencies())
+                                        .collect(Collectors.joining(", "))})
+                        .toArray(String[][]::new),
+
+                new String[] {"Name", "Id", "Version", "Description", "Dependencies"})),
+
+                JScrollPane.VERTICAL_SCROLLBAR_AS_NEEDED,
+                JScrollPane.HORIZONTAL_SCROLLBAR_AS_NEEDED));
 
         backButton.addActionListener(this);
     }
