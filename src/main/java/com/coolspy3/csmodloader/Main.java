@@ -23,10 +23,6 @@ public class Main
 
     public static void main(String[] args)
     {
-        MainWindow.create();
-
-        if (true) return;
-
         String accessToken = null;
         String gameDir = null;
         String username = null;
