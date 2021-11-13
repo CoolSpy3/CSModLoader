@@ -34,9 +34,15 @@ public final class ModLoader
     public static final String[] BASIC_MOD_INFO = new String[] {"Mod Id", "Version"};
     public static final Function<Mod, String[]> MODINFOMAPP_FUNCTION =
             mod -> new String[] {mod.id(), mod.version()};
+    private static boolean modsLoaded = false;
+    private static ArrayList<Mod> modList = new ArrayList<>();
 
     public static ArrayList<Entrypoint> loadMods()
     {
+        if (modsLoaded) return null;
+
+        modsLoaded = true;
+
         HashMap<Mod, Class<?>> mods = new HashMap<>();
 
         File[] files = GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(
@@ -188,6 +194,8 @@ public final class ModLoader
             return null;
         }
 
+        modList = new ArrayList<>(mods.keySet());
+
         return entrypoints;
     }
 
@@ -313,6 +321,11 @@ public final class ModLoader
                 throw e;
             }
         }
+    }
+
+    public static ArrayList<Mod> getModList()
+    {
+        return new ArrayList<>(modList);
     }
 
     private ModLoader()

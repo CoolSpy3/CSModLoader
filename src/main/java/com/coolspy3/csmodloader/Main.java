@@ -10,7 +10,8 @@ import java.security.SecureRandom;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
-
+import javax.swing.SwingUtilities;
+import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.network.ConnectionHandler;
 import com.coolspy3.csmodloader.util.Utils;
@@ -20,6 +21,10 @@ public class Main
 
     public static void main(String[] args)
     {
+        MainWindow.create();
+
+        if (true) return;
+
         String accessToken = null;
         String gameDir = null;
         String username = null;
@@ -27,11 +32,11 @@ public class Main
 
         {
             Iterator<String> argIttr = Arrays.asList(args).iterator();
-            for (;;)
+            if (args.length > 0) for (;;)
             {
                 String arg = argIttr.next().toLowerCase();
-                if (!argIttr.hasNext())
-                    break;
+
+                if (!argIttr.hasNext()) break;
 
                 switch (arg)
                 {
