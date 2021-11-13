@@ -4,5 +4,16 @@
     "java.format.settings.url": "style.xml",
     "editor.formatOnPaste": true,
     "editor.formatOnSave": true,
-    "editor.formatOnType": true
+    "editor.formatOnType": true,
+    "editor.codeActionsOnSave": {
+        "source.organizeImports": true
+    },
+    "java.saveActions.organizeImports": false,
+    "java.completion.importOrder": [
+        "#",
+        "java",
+        "javax",
+        "com.coolspy3",
+        ""
+    ]
 }

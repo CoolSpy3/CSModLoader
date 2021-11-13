@@ -5,11 +5,13 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Objects;
 import java.util.stream.IntStream;
+
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableModel;
+
 import com.coolspy3.csmodloader.Config;
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.network.ServerInstance;

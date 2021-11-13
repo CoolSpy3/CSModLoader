@@ -1,6 +1,7 @@
 package com.coolspy3.csmodloader.network;
 
 import java.util.function.Supplier;
+
 import com.coolspy3.csmodloader.util.SafelyCloseable;
 
 class Connection implements SafelyCloseable

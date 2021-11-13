@@ -1,6 +1,7 @@
 package com.coolspy3.csmodloader.util;
 
 import java.util.Vector;
+
 import javax.swing.table.DefaultTableModel;
 
 public class UneditableTableModel extends DefaultTableModel

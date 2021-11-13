@@ -21,8 +21,8 @@ import java.util.function.Supplier;
 import javax.swing.SwingUtilities;
 
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
-import com.google.gson.Gson;
 
+import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 
 public final class Utils

@@ -5,7 +5,9 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.util.ArrayList;
+
 import javax.swing.SwingUtilities;
+
 import com.coolspy3.csmodloader.Config;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;

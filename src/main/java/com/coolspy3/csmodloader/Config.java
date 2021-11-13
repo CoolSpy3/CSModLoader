@@ -7,10 +7,13 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
+
 import javax.swing.SwingUtilities;
+
 import com.coolspy3.csmodloader.gui.Server;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.ShiftableList;
+
 import com.google.gson.Gson;
 
 public class Config

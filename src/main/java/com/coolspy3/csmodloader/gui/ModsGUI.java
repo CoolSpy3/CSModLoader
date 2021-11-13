@@ -5,10 +5,12 @@ import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
 import java.util.stream.Collectors;
+
 import javax.swing.JButton;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
+
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.util.UneditableTableModel;
 
