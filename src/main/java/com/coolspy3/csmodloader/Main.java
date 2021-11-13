@@ -5,12 +5,16 @@ import java.io.IOException;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
 import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
+import com.coolspy3.csmodloader.mod.Entrypoint;
+import com.coolspy3.csmodloader.mod.ModLoader;
+import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
@@ -82,6 +86,12 @@ public class Main
         }
 
         ServerInstance.init(accessToken, rsaKey);
+
+        ArrayList<Entrypoint> mods = ModLoader.loadMods();
+
+        if (mods == null) return;
+
+        PacketHandler.setMods(mods);
 
         MainWindow.create();
     }

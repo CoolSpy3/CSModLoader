@@ -37,6 +37,9 @@ public class ConnectionHandler implements Runnable
 
     private static final KeyFactory keyFactory = Utils.noFail(() -> KeyFactory.getInstance("RSA"));
 
+    private static final InheritableThreadLocal<ConnectionHandler> localHandler =
+            new InheritableThreadLocal<>();
+
     // Config Info
     private final Socket iSocket, oSocket;
 
@@ -69,6 +72,7 @@ public class ConnectionHandler implements Runnable
     private Cipher decCipher;
 
     private ConnectionHandler other;
+    private PacketHandler packetHandler;
 
     public ConnectionHandler(Socket iSocket, Socket oSocket, String serverIp, String accessToken,
             PacketDirection direction, KeyPair serverKey) throws IOException
@@ -121,7 +125,7 @@ public class ConnectionHandler implements Runnable
         os = new BufferedOutputStream(new CipherOutputStream(os, encCipher));
     }
 
-    public void blockPacket()
+    void blockPacket()
     {
         blockPacket = true;
     }
@@ -134,6 +138,11 @@ public class ConnectionHandler implements Runnable
     private void setOther(ConnectionHandler other)
     {
         this.other = other;
+    }
+
+    private void setPacketHandler(PacketHandler packetHandler)
+    {
+        this.packetHandler = packetHandler;
     }
 
     private void safeWrite(byte[] data) throws IOException
@@ -162,6 +171,9 @@ public class ConnectionHandler implements Runnable
     @SuppressWarnings({"UseSpecificCatch", "SynchronizeOnNonFinalField"})
     public void run()
     {
+        localHandler.set(this);
+        packetHandler.linkToCurrentThread();
+
         try
         {
             boolean running = true;
@@ -392,7 +404,7 @@ public class ConnectionHandler implements Runnable
         }
 
         if (key != null && command == Utils.DO_NOTHING)
-            PacketHandler.handleRawPacket(this, packetData);
+            packetHandler.handleRawPacket(this, packetData);
 
         is.reset();
 
@@ -494,6 +506,10 @@ public class ConnectionHandler implements Runnable
         c2s.setOther(s2c);
         s2c.setOther(c2s);
 
+        PacketHandler packetHandler = new PacketHandler();
+        c2s.setPacketHandler(packetHandler);
+        s2c.setPacketHandler(packetHandler);
+
         s2c.startInNewThread();
         c2s.startInNewThread();
 
@@ -501,6 +517,11 @@ public class ConnectionHandler implements Runnable
             Utils.safe(client::close);
             Utils.safe(server::close);
         }, () -> !client.isClosed() || !server.isClosed());
+    }
+
+    public static ConnectionHandler getLocal()
+    {
+        return localHandler.get();
     }
 
     public static enum State

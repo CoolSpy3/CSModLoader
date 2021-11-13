@@ -11,6 +11,9 @@ public final class PacketParser
     private static final HashMap<Class<? extends Packet>, PacketSpec<?>> specifications =
             new HashMap<>();
 
+    private static final HashMap<Integer, Class<? extends Packet>> packetClasses = new HashMap<>();
+    private static final HashMap<Class<? extends Packet>, Integer> packetIds = new HashMap<>();
+
     private static final HashMap<Class<?>, ObjectParser<?>> objectParsers = new HashMap<>();
 
     static
@@ -18,14 +21,24 @@ public final class PacketParser
         Parsers.registerDefaults();
     }
 
-    public static <T extends Packet> void addSpecification(PacketSpec<T> spec)
+    public static void addSpecification(PacketSpec<?> spec)
     {
         specifications.put(spec.getType(), spec);
     }
 
-    public static <T> void addParser(ObjectParser<T> parser)
+    public static void addParser(ObjectParser<?> parser)
     {
         objectParsers.put(parser.getType(), parser);
+    }
+
+    public static int getClassId(Class<? extends Packet> packetClass)
+    {
+        return packetIds.get(packetClass);
+    }
+
+    public static Class<? extends Packet> getPacketClass(int packetId)
+    {
+        return packetClasses.get(packetId);
     }
 
     @SuppressWarnings("unchecked")
@@ -59,6 +72,16 @@ public final class PacketParser
         }
 
         return spec.create(values);
+    }
+
+    public static void registerPacketClass(Class<? extends Packet> packetClass, int packetId,
+            int... additionalIds)
+    {
+        packetClasses.put(packetId, packetClass);
+        packetIds.put(packetClass, packetId);
+
+        for (int id : additionalIds)
+            packetClasses.put(id, packetClass);
     }
 
     @SuppressWarnings("unchecked")
