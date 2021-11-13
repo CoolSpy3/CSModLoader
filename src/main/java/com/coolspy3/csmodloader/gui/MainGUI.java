@@ -39,7 +39,7 @@ class MainGUI extends JPanel implements ActionListener
         modsButton.addActionListener(this);
 
         add(new JScrollPane(table = new JTable(tableModel = new UneditableTableModel(
-                new String[] {"Name", "Ip", "Connect", "Edit", "^", "v"}, 0)
+                new String[] {"Name", "Ip", "Connect", "Edit", "Delete", "^", "v"}, 0)
         {
             @Override
             public Class<?> getColumnClass(int columnIndex)
@@ -63,6 +63,7 @@ class MainGUI extends JPanel implements ActionListener
                 .map(server -> new Object[] {server.name, server.ip,
                         serverButton("Connect", ButtonAction.CONNECT, server.id),
                         serverButton("Edit", ButtonAction.EDIT, server.id),
+                        serverButton("Delete", ButtonAction.DELETE, server.id),
                         serverButton("^", ButtonAction.MVUP, server.id),
                         serverButton("v", ButtonAction.MVDWN, server.id)})
                 .forEach(tableModel::addRow);
@@ -142,6 +143,16 @@ class MainGUI extends JPanel implements ActionListener
 
                     break;
 
+                case DELETE:
+                    Config config = Config.getInstance();
+
+                    config.serverList.remove(id);
+                    config.servers.remove(id);
+
+                    Config.safeSave();
+
+                    break;
+
                 case MVUP:
                     Config.getInstance().serverList.shiftUp(id);
 
@@ -175,7 +186,7 @@ class MainGUI extends JPanel implements ActionListener
 
     private static enum ButtonAction
     {
-        CONNECT, EDIT, MVUP, MVDWN;
+        CONNECT, EDIT, DELETE, MVUP, MVDWN;
     }
 
 }
