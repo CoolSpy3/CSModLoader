@@ -147,7 +147,8 @@ public final class ModLoader
 
                             try
                             {
-                                entrypoints.add((Entrypoint) mods.get(mod).newInstance());
+                                entrypoints.add(
+                                        (Entrypoint) mods.get(mod).getConstructor().newInstance());
                             }
                             catch (Exception e)
                             {

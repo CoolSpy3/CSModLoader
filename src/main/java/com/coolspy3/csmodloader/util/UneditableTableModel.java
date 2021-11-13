@@ -4,6 +4,7 @@ import java.util.Vector;
 
 import javax.swing.table.DefaultTableModel;
 
+@SuppressWarnings("rawtypes")
 public class UneditableTableModel extends DefaultTableModel
 {
 
@@ -17,7 +18,7 @@ public class UneditableTableModel extends DefaultTableModel
         super(rowCount, columnCount);
     }
 
-    public UneditableTableModel(Vector<?> columnNames, int rowCount)
+    public UneditableTableModel(Vector columnNames, int rowCount)
     {
         super(columnNames, rowCount);
     }
@@ -27,7 +28,7 @@ public class UneditableTableModel extends DefaultTableModel
         super(columnNames, rowCount);
     }
 
-    public UneditableTableModel(Vector<?> data, Vector<?> columnNames)
+    public UneditableTableModel(Vector<? extends Vector> data, Vector columnNames)
     {
         super(data, columnNames);
     }
