@@ -404,7 +404,8 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        if (key != null && command == Utils.DO_NOTHING) packetHandler.handleRawPacket(packetData);
+        if (key != null && command == Utils.DO_NOTHING)
+            packetHandler.handleRawPacket(direction, packetData);
 
         is.reset();
 

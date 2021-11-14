@@ -43,11 +43,12 @@ public class PacketHandler
         }
     }
 
-    public void handlePacket(int packetId, InputStream packetData) throws IOException
+    public void handlePacket(PacketDirection direction, int packetId, InputStream packetData)
+            throws IOException
     {
         Packet packet = Utils.reporting(() -> {
 
-            Class<? extends Packet> packetClass = PacketParser.getPacketClass(packetId);
+            Class<? extends Packet> packetClass = PacketParser.getPacketClass(direction, packetId);
 
             if (packetClass == null) return null;
 
@@ -60,11 +61,11 @@ public class PacketHandler
         dispatch(packet);
     }
 
-    public void handleRawPacket(byte[] packetData) throws IOException
+    public void handleRawPacket(PacketDirection direction, byte[] packetData) throws IOException
     {
         ByteArrayInputStream bais = new ByteArrayInputStream(packetData);
 
-        handlePacket(Utils.readVarInt(bais), bais);
+        handlePacket(direction, Utils.readVarInt(bais), bais);
     }
 
     public void register(Object o)
@@ -188,10 +189,12 @@ public class PacketHandler
                 : validTypes;
     }
 
-    public boolean sendPacket(PacketDirection direction, Packet packet)
+    public boolean sendPacket(Packet packet)
     {
         return Utils.reporting(() -> {
-            int packetId = PacketParser.getClassId(packet.getClass());
+            PacketDirection direction = PacketParser.getPacketSpecification(packet).getDirection();
+
+            int packetId = PacketParser.getClassId(direction, packet.getClass());
 
             ConnectionHandler.getLocal().write(direction, packetId,
                     os -> PacketParser.write(packet, os));

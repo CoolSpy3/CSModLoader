@@ -4,6 +4,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
+import com.coolspy3.csmodloader.network.PacketDirection;
+
 public interface PacketSpec<T extends Packet>
 {
 
@@ -12,6 +14,8 @@ public interface PacketSpec<T extends Packet>
     public Class<?>[] types();
 
     public Class<T> getType();
+
+    public PacketDirection getDirection();
 
     public default boolean customSerialization()
     {
