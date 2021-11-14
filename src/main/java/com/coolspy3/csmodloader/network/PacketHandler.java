@@ -32,7 +32,7 @@ public class PacketHandler
         loadedMods = new ArrayList<>(mods);
         loadedMods.replaceAll(Entrypoint::create);
 
-        loadedMods.forEach(Entrypoint::init);
+        loadedMods.forEach(entrypoint -> Utils.reporting(() -> entrypoint.init(this)));
     }
 
     public void dispatch(Packet p)

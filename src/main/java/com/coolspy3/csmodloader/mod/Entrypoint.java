@@ -1,5 +1,7 @@
 package com.coolspy3.csmodloader.mod;
 
+import com.coolspy3.csmodloader.network.PacketHandler;
+
 public interface Entrypoint
 {
 
@@ -8,7 +10,7 @@ public interface Entrypoint
         return this;
     }
 
-    public default void init()
+    public default void init(PacketHandler handler)
     {}
 
 }
