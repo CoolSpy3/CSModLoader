@@ -35,12 +35,9 @@ public class PacketHandler
         loadedMods.forEach(entrypoint -> Utils.reporting(() -> entrypoint.init(this)));
     }
 
-    public void dispatch(Packet p)
+    public boolean dispatch(Packet p)
     {
-        if (subscribers.stream().filter(sub -> sub.invoke(p)).count() > 0)
-        {
-            ConnectionHandler.getLocal().blockPacket();
-        }
+        return subscribers.stream().filter(sub -> sub.invoke(p)).count() > 0;
     }
 
     public void handlePacket(PacketDirection direction, int packetId, InputStream packetData)
@@ -58,7 +55,7 @@ public class PacketHandler
 
         if (packet == null) return;
 
-        dispatch(packet);
+        if (dispatch(packet)) ConnectionHandler.getLocal().blockPacket();
     }
 
     public void handleRawPacket(PacketDirection direction, byte[] packetData) throws IOException
