@@ -3,6 +3,7 @@ package com.coolspy3.csmodloader.gui;
 import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.util.Arrays;
 import java.util.Objects;
 import java.util.stream.IntStream;
 
@@ -16,6 +17,7 @@ import com.coolspy3.csmodloader.Config;
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.ComponentTableCellRenderer;
+import com.coolspy3.csmodloader.util.TableButtonListener;
 import com.coolspy3.csmodloader.util.UneditableTableModel;
 import com.coolspy3.csmodloader.util.Utils;
 
@@ -52,6 +54,8 @@ class MainGUI extends JPanel implements ActionListener
 
         table.setDefaultRenderer(JButton.class, new ComponentTableCellRenderer());
 
+        new TableButtonListener(table);
+
         updateTable();
     }
 
@@ -70,18 +74,26 @@ class MainGUI extends JPanel implements ActionListener
                         serverButton("v", ButtonAction.MVDWN, server.id)})
                 .forEach(tableModel::addRow);
 
+        if (tableModel.getRowCount() > 0)
+        {
+            ((JButton) tableModel.getValueAt(0, 5)).setEnabled(false);
+            ((JButton) tableModel.getValueAt(tableModel.getRowCount() - 1, 6)).setEnabled(false);
+        }
+
         if (ServerInstance.isRunning())
         {
             IntStream.range(0, tableModel.getRowCount())
-                    .mapToObj(row -> tableModel.getValueAt(row, 2))
-                    .filter(obj -> obj instanceof JButton).map(obj -> (JButton) obj)
-                    .forEach(btn -> btn.setEnabled(false));
+                    .mapToObj(row -> IntStream.range(2, 5)
+                            .mapToObj(col -> tableModel.getValueAt(row, col))
+                            .toArray(Object[]::new))
+                    .flatMap(Arrays::stream).filter(obj -> obj instanceof JButton)
+                    .map(obj -> (JButton) obj).forEach(btn -> btn.setEnabled(false));
 
             IntStream.range(0, tableModel.getRowCount())
                     .mapToObj(row -> tableModel.getValueAt(row, 2))
                     .filter(obj -> obj instanceof JButton).map(obj -> (JButton) obj)
-                    .filter(btn -> btn.getClientProperty("serverId") == ServerInstance
-                            .getRunningServerId())
+                    .filter(btn -> btn.getClientProperty("serverId")
+                            .equals(ServerInstance.getRunningServerId()))
                     .forEach(btn -> {
                         btn.setText("Disconnect");
                         btn.setEnabled(true);
@@ -128,15 +140,12 @@ class MainGUI extends JPanel implements ActionListener
                 case CONNECT:
                     if (ServerInstance.isRunning())
                     {
-                        if (((JButton) tableModel
-                                .getValueAt(Config.getInstance().serverList.indexOf(id), 2))
-                                        .isEnabled())
-                            ServerInstance.stop();
+                        ServerInstance.stop();
 
                         break;
                     }
 
-                    ServerInstance.start(Config.getInstance().servers.get(id).ip);
+                    ServerInstance.start(id);
 
                     break;
 
