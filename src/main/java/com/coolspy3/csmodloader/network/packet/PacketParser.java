@@ -34,6 +34,18 @@ public final class PacketParser
         Parsers.registerDefaults();
     }
 
+    public static <T extends Packet> void addSpecification(Class<T> packetType,
+            Function<Object[], T> constructor)
+    {
+        PacketSpec spec = packetType.getAnnotation(PacketSpec.class);
+
+        if (spec == null) throw new IllegalArgumentException(
+                "No specification defined for packet type: " + packetType.getCanonicalName());
+
+        specifications.put(packetType, spec);
+        constructors.put(packetType, constructor);
+    }
+
     public static <T extends Packet> void addSpecification(Class<T> packetType, PacketSpec spec,
             Function<Object[], T> constructor)
     {
