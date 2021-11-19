@@ -109,6 +109,22 @@ public final class PacketParser
     }
 
     @SuppressWarnings("unchecked")
+    public static <T> ObjectParser<T> getParser(Class<T> type)
+    {
+        return (ObjectParser<T>) objectParsers.get(type);
+    }
+
+    public static <T, U> ObjectParser<U> mappingParser(Class<T> baseType, Function<U, T> encMapper,
+            Function<T, U> decMapper, Class<U> type) throws IllegalArgumentException
+    {
+        ObjectParser<T> parser = getParser(baseType);
+
+        if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
+
+        return ObjectParser.mapping(parser, encMapper, decMapper, type);
+    }
+
+    @SuppressWarnings("unchecked")
     public static <T extends Packet> T read(Class<T> packetClass, InputStream is)
             throws IllegalArgumentException, IOException
     {
@@ -127,7 +143,9 @@ public final class PacketParser
         {
             Class<?> type = types[i];
 
-            if (!objectParsers.containsKey(type))
+            ObjectParser<?> parser = getParser(type);
+
+            if (parser == null)
                 throw new IllegalArgumentException("Unknown Type: " + type.getName());
 
             values[i] = objectParsers.get(type).decode(is);
