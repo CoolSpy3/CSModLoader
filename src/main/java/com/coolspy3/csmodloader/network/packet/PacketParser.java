@@ -136,6 +136,17 @@ public final class PacketParser
         return (T) constructors.get(packetClass).apply(values);
     }
 
+    public static void registerPacketClass(Class<? extends Packet> packetType, int packetId,
+            int... additionalIds)
+    {
+        PacketSpec spec = packetType.getAnnotation(PacketSpec.class);
+
+        if (spec == null) throw new IllegalArgumentException(
+                "No specification defined for packet type: " + packetType.getCanonicalName());
+
+        registerPacketClass(spec.direction(), packetType, packetId, additionalIds);
+    }
+
     public static void registerPacketClass(PacketDirection direction,
             Class<? extends Packet> packetClass, int packetId, int... additionalIds)
     {

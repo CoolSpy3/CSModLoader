@@ -30,10 +30,10 @@ public final class Parsers
 
                 ObjectParser.wrapping(
                         ObjectParser.of(Utils::writeVarInt, Utils::readVarInt, Integer.class),
-                        Packet.VAR_INT),
+                        Packet.VarInt.class),
                 ObjectParser.wrapping(
                         ObjectParser.of(Utils::writeVarLong, Utils::readVarLong, Long.class),
-                        Packet.VAR_LONG),
+                        Packet.VarLong.class),
 
                 ObjectParser.of(uid -> {
                     ByteBuffer buf = ByteBuffer.allocate(16);
