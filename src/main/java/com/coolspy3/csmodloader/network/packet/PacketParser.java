@@ -136,6 +136,13 @@ public final class PacketParser
         return (T) constructors.get(packetClass).apply(values);
     }
 
+    public static <T extends Packet> void registerPacket(Class<T> packetType,
+            Function<Object[], T> constructor, int packetId, int... additionalIds)
+    {
+        addSpecification(packetType, constructor);
+        registerPacketClass(packetType, packetId, additionalIds);
+    }
+
     public static void registerPacketClass(Class<? extends Packet> packetType, int packetId,
             int... additionalIds)
     {
