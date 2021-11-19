@@ -4,13 +4,16 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.HashMap;
+import java.util.function.Function;
 
 import com.coolspy3.csmodloader.network.PacketDirection;
 
 public final class PacketParser
 {
 
-    private static final HashMap<Class<? extends Packet>, PacketSpec<?>> specifications =
+    private static final HashMap<Class<? extends Packet>, PacketSpec> specifications =
+            new HashMap<>();
+    private static final HashMap<Class<? extends Packet>, Function<Object[], ? extends Packet>> constructors =
             new HashMap<>();
 
     private static final HashMap<Integer, Class<? extends Packet>> cbPacketClasses =
@@ -23,19 +26,29 @@ public final class PacketParser
 
     private static final HashMap<Class<?>, ObjectParser<?>> objectParsers = new HashMap<>();
 
+    private static final HashMap<Class<? extends Packet>, PacketSerializer<?>> customSerializers =
+            new HashMap<>();
+
     static
     {
         Parsers.registerDefaults();
     }
 
-    public static void addSpecification(PacketSpec<?> spec)
+    public static <T extends Packet> void addSpecification(Class<T> packetType, PacketSpec spec,
+            Function<Object[], T> constructor)
     {
-        specifications.put(spec.getType(), spec);
+        specifications.put(packetType, spec);
+        constructors.put(packetType, constructor);
     }
 
     public static void addParser(ObjectParser<?> parser)
     {
         objectParsers.put(parser.getType(), parser);
+    }
+
+    public static void addSerializer(PacketSerializer<?> serializer)
+    {
+        customSerializers.put(serializer.getType(), serializer);
     }
 
     public static int getClassId(PacketDirection direction, Class<? extends Packet> packetClass)
@@ -69,37 +82,33 @@ public final class PacketParser
         }
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Packet> PacketSpec<T> getPacketSpecification(T packet)
-            throws IllegalArgumentException
+    public static PacketSpec getPacketSpecification(Packet packet) throws IllegalArgumentException
     {
-        return getPacketSpecification((Class<T>) packet.getClass());
+        return getPacketSpecification(packet.getClass());
     }
 
-    @SuppressWarnings("unchecked")
-    public static <T extends Packet> PacketSpec<T> getPacketSpecification(Class<T> packetClass)
+    public static PacketSpec getPacketSpecification(Class<? extends Packet> packetClass)
             throws IllegalArgumentException
     {
         if (!specifications.containsKey(packetClass))
             throw new IllegalArgumentException("Unknown Specification: " + packetClass.getName());
 
-        return (PacketSpec<T>) specifications.get(packetClass);
+        return specifications.get(packetClass);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Packet> T read(Class<T> packetClass, InputStream is)
             throws IllegalArgumentException, IOException
     {
-        return read(getPacketSpecification(packetClass), is);
-    }
+        if (customSerializers.containsKey(packetClass))
+            return (T) customSerializers.get(packetClass).read(is);
 
-    public static <T extends Packet> T read(PacketSpec<T> spec, InputStream is)
-            throws IllegalArgumentException, IOException
-    {
-        if (!specifications.containsKey(spec.getType())) addSpecification(spec);
+        if (!specifications.containsKey(packetClass))
+            throw new IllegalArgumentException("Unknown Specification: " + packetClass.getName());
 
-        if (spec.customSerialization()) return spec.read(is);
+        PacketSpec spec = getPacketSpecification(packetClass);
 
-        Class<?>[] types = spec.types();
+        Class<?>[] types = spec.argTypes();
         Object[] values = new Object[types.length];
 
         for (int i = 0; i < types.length; i++)
@@ -112,7 +121,7 @@ public final class PacketParser
             values[i] = objectParsers.get(type).decode(is);
         }
 
-        return spec.create(values);
+        return (T) constructors.get(packetClass).apply(values);
     }
 
     public static void registerPacketClass(PacketDirection direction,
@@ -143,34 +152,29 @@ public final class PacketParser
         }
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Packet> void write(T packet, OutputStream os)
             throws IllegalArgumentException, IOException
     {
-        write(packet, getPacketSpecification(packet), os);
+        write(packet, (Class<T>) packet.getClass(), os);
     }
 
     public static <T extends Packet> void write(T packet, Class<T> packetClass, OutputStream os)
             throws IllegalArgumentException, IOException
     {
-        if (!specifications.containsKey(packetClass))
-            throw new IllegalArgumentException("Unknown Specification: " + packetClass.getName());
-
-        write(packet, getPacketSpecification(packetClass), os);
-    }
-
-    public static <T extends Packet> void write(T packet, PacketSpec<T> spec, OutputStream os)
-            throws IllegalArgumentException, IOException
-    {
-        if (!specifications.containsKey(spec.getType())) addSpecification(spec);
-
-        if (spec.customSerialization())
+        if (customSerializers.containsKey(packetClass))
         {
-            spec.write(packet, os);
+            customSerializers.get(packetClass).write(packet, os);
 
             return;
         }
 
-        Class<?>[] types = spec.types();
+        if (!specifications.containsKey(packetClass))
+            throw new IllegalArgumentException("Unknown Specification: " + packetClass.getName());
+
+        PacketSpec spec = specifications.get(packetClass);
+
+        Class<?>[] types = spec.argTypes();
         Object[] values = packet.getValues();
 
         for (int i = 0; i < types.length; i++)
