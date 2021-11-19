@@ -5,8 +5,8 @@ import com.coolspy3.csmodloader.network.PacketDirection;
 public @interface PacketSpec
 {
 
-    public Class<?>[] argTypes();
+    public Class<?>[] types();
 
-    public PacketDirection getDirection();
+    public PacketDirection direction();
 
 }

@@ -108,7 +108,7 @@ public final class PacketParser
 
         PacketSpec spec = getPacketSpecification(packetClass);
 
-        Class<?>[] types = spec.argTypes();
+        Class<?>[] types = spec.types();
         Object[] values = new Object[types.length];
 
         for (int i = 0; i < types.length; i++)
@@ -174,7 +174,7 @@ public final class PacketParser
 
         PacketSpec spec = specifications.get(packetClass);
 
-        Class<?>[] types = spec.argTypes();
+        Class<?>[] types = spec.types();
         Object[] values = packet.getValues();
 
         for (int i = 0; i < types.length; i++)

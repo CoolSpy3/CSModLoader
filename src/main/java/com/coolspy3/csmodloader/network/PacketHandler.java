@@ -189,7 +189,7 @@ public class PacketHandler
     public boolean sendPacket(Packet packet)
     {
         return Utils.reporting(() -> {
-            PacketDirection direction = PacketParser.getPacketSpecification(packet).getDirection();
+            PacketDirection direction = PacketParser.getPacketSpecification(packet).direction();
 
             int packetId = PacketParser.getClassId(direction, packet.getClass());
 
