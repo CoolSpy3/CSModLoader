@@ -261,7 +261,7 @@ public final class PacketParser
         }
     }
 
-    public static void writeObject(Object obj, Class<?> type, OutputStream os)
+    public static void writeObject(Class<?> type, Object obj, OutputStream os)
             throws IllegalArgumentException, IOException
     {
         if (!objectParsers.containsKey(type))
