@@ -141,17 +141,42 @@ public final class PacketParser
 
         for (int i = 0; i < types.length; i++)
         {
-            Class<?> type = types[i];
-
-            ObjectParser<?> parser = getParser(type);
-
-            if (parser == null)
-                throw new IllegalArgumentException("Unknown Type: " + type.getName());
-
-            values[i] = objectParsers.get(type).decode(is);
+            values[i] = readAnyObject(types[i], is);
         }
 
         return (T) constructors.get(packetClass).apply(values);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T readObject(Class<T> type, InputStream is)
+            throws ClassCastException, IllegalArgumentException, IOException
+    {
+        ObjectParser<?> parser = getParser(type);
+
+        if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
+
+        return (T) objectParsers.get(type).decode(is);
+    }
+
+    public static <T> Object readAnyObject(Class<T> type, InputStream is)
+            throws IllegalArgumentException, IOException
+    {
+        ObjectParser<?> parser = getParser(type);
+
+        if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
+
+        return objectParsers.get(type).decode(is);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, U extends WrapperType<T>> T readWrappedObject(Class<U> type, InputStream is)
+            throws IllegalArgumentException, IOException
+    {
+        ObjectParser<?> parser = getParser(type);
+
+        if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
+
+        return (T) objectParsers.get(type).decode(is);
     }
 
     public static <T extends Packet> void registerPacket(Class<T> packetType,
