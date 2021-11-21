@@ -261,6 +261,15 @@ public final class PacketParser
         }
     }
 
+    public static void writeObject(Object obj, Class<?> type, OutputStream os)
+            throws IllegalArgumentException, IOException
+    {
+        if (!objectParsers.containsKey(type))
+            throw new IllegalArgumentException("Unknown Type: " + type.getName());
+
+        objectParsers.get(type).encodeObject(obj, os);
+    }
+
     private PacketParser()
     {}
 
