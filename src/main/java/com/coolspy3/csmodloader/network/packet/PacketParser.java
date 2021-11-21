@@ -186,6 +186,14 @@ public final class PacketParser
         registerPacketClass(packetType, packetId, additionalIds);
     }
 
+    public static <T extends Packet> void registerPacket(Class<T> packetType,
+            PacketSerializer<T> serializer, int packetId, int... additionalIds)
+    {
+        addSpecification(packetType, args -> null);
+        addSerializer(serializer);
+        registerPacketClass(packetType, packetId, additionalIds);
+    }
+
     public static void registerPacketClass(Class<? extends Packet> packetType, int packetId,
             int... additionalIds)
     {
