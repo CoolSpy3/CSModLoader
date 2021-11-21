@@ -9,8 +9,8 @@ public interface PacketSerializer<T extends Packet>
 
     public Class<T> getType();
 
-    public Packet read(InputStream is) throws IOException;
+    public T read(InputStream is) throws IOException;
 
-    public void write(Packet packet, OutputStream os) throws IOException;
+    public void write(T packet, OutputStream os) throws IOException;
 
 }

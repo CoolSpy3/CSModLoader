@@ -232,12 +232,13 @@ public final class PacketParser
         write(packet, (Class<T>) packet.getClass(), os);
     }
 
+    @SuppressWarnings("unchecked")
     public static <T extends Packet> void write(T packet, Class<T> packetClass, OutputStream os)
             throws IllegalArgumentException, IOException
     {
         if (customSerializers.containsKey(packetClass))
         {
-            customSerializers.get(packetClass).write(packet, os);
+            ((PacketSerializer<T>) customSerializers.get(packetClass)).write(packet, os);
 
             return;
         }
