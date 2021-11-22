@@ -239,7 +239,7 @@ public class PacketHandler
                 Class<? extends Packet>[] types)
         {
             this.id = id;
-            this.func = Utils.reporting(func);
+            this.func = Utils.reporting(func, false);
             this.types = Arrays.asList(types);
         }
 
