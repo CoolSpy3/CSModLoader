@@ -20,7 +20,7 @@ public class SemanticVersion implements Comparable<SemanticVersion>
             throw new IllegalArgumentException("Invalid Version: " + version);
         }
 
-        this.version = Stream.of(version.split(".")).mapToInt(Integer::parseInt).toArray();
+        this.version = Stream.of(version.split("\\.")).mapToInt(Integer::parseInt).toArray();
     }
 
     public static boolean validate(String version)
@@ -39,7 +39,20 @@ public class SemanticVersion implements Comparable<SemanticVersion>
             if (compare != 0) return compare;
         }
 
-        return Integer.compare(version.length, o.version.length);
+        int lengthComparison = Integer.compare(version.length, o.version.length);
+        int[] remainder = lengthComparison < 0 ? o.version : lengthComparison > 0 ? version : null;
+
+        if (remainder == null) return 0;
+
+        for (int i = Math.min(version.length, o.version.length); i < remainder.length; i++)
+            if (remainder[i] != 0) return lengthComparison;
+
+        return 0;
+    }
+
+    public int[] getVersion()
+    {
+        return Arrays.copyOf(version, version.length);
     }
 
 }

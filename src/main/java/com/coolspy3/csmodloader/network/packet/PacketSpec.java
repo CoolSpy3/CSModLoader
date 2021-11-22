@@ -1,33 +1,19 @@
 package com.coolspy3.csmodloader.network.packet;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
+import java.lang.annotation.ElementType;
+import java.lang.annotation.Retention;
+import java.lang.annotation.RetentionPolicy;
+import java.lang.annotation.Target;
 
 import com.coolspy3.csmodloader.network.PacketDirection;
 
-public interface PacketSpec<T extends Packet>
+@Retention(RetentionPolicy.RUNTIME)
+@Target(ElementType.TYPE)
+public @interface PacketSpec
 {
-
-    public T create(Object[] args);
 
     public Class<?>[] types();
 
-    public Class<T> getType();
-
-    public PacketDirection getDirection();
-
-    public default boolean customSerialization()
-    {
-        return false;
-    }
-
-    public default T read(InputStream is) throws IOException
-    {
-        return PacketParser.read(this, is);
-    }
-
-    public default void write(T packet, OutputStream os) throws IOException
-    {}
+    public PacketDirection direction();
 
 }

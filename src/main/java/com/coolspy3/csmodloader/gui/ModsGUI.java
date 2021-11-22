@@ -4,6 +4,7 @@ import java.awt.BorderLayout;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
 import java.util.Arrays;
+import java.util.Comparator;
 import java.util.stream.Collectors;
 
 import javax.swing.JButton;
@@ -11,6 +12,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
 
+import com.coolspy3.csmodloader.mod.Mod;
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.util.UneditableTableModel;
 
@@ -30,6 +32,7 @@ class ModsGUI extends JPanel implements ActionListener
         add(new JScrollPane(new JTable(new UneditableTableModel(
 
                 ModLoader.getModList().stream()
+                        .sorted(Comparator.comparing(Mod::id, String.CASE_INSENSITIVE_ORDER))
                         .map(mod -> new String[] {mod.name(), mod.id(), mod.version(),
                                 mod.description(),
                                 Arrays.stream(mod.dependencies())

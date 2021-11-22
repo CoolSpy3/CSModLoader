@@ -23,6 +23,7 @@ import java.util.stream.Stream;
 import javax.swing.filechooser.FileNameExtensionFilter;
 
 import com.coolspy3.csmodloader.GameArgs;
+import com.coolspy3.csmodloader.Main;
 import com.coolspy3.csmodloader.gui.ListFrame;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
@@ -48,7 +49,7 @@ public final class ModLoader
         File[] files = GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(
                 ((Predicate<File>) new FileNameExtensionFilter("Jar Files", "jar")::accept)
                         .and(File::isFile)::test);
-        files = files == null ? new File[] {} : null;
+        files = files == null ? new File[] {} : files;
 
         {
             try
@@ -135,6 +136,9 @@ public final class ModLoader
         CopyOnWriteArrayList<Mod> unloadedMods = new CopyOnWriteArrayList<>(mods.keySet());
         AtomicInteger numLoadedMods = new AtomicInteger();
 
+        Mod loaderMod = Main.class.getAnnotation(Mod.class);
+        loadedMods.add(loaderMod);
+
         do
         {
             numLoadedMods.set(0);
@@ -191,13 +195,14 @@ public final class ModLoader
                     missingDependencies.entrySet().stream().map(entry -> entry.getValue().stream()
                             .map(dependency -> new String[] {entry.getKey().id(),
                                     entry.getKey().version(), dependency})
-                            .toArray(String[]::new)).flatMap(Arrays::stream)
+                            .toArray(String[][]::new)).flatMap(Arrays::stream)
                             .toArray(String[][]::new)));
 
             return null;
         }
 
         modList = new ArrayList<>(mods.keySet());
+        modList.add(loaderMod);
 
         return entrypoints;
     }
@@ -213,7 +218,7 @@ public final class ModLoader
 
     private static List<String> getMissingDependenciesValidated(Mod mod, Collection<Mod> loadedMods)
     {
-        return Stream.of(mod.dependencies()).filter(((Predicate<String>) dependency -> {
+        return Stream.of(mod.dependencies()).filter(dependency -> {
             String[] dependencyParts = dependency.split(":");
             String dependencyId = dependencyParts[0];
 
@@ -223,8 +228,8 @@ public final class ModLoader
 
             return loadedMods.stream().filter(loadedMod -> dependencyId.equals(loadedMod.id())
                     && dependencyVersionRange.contains(new SemanticVersion(loadedMod.version())))
-                    .count() > 0;
-        }).negate()).collect(Collectors.toList());
+                    .count() == 0;
+        }).collect(Collectors.toList());
     }
 
     public static boolean validateMod(Mod mod)
@@ -277,9 +282,11 @@ public final class ModLoader
         ArrayList<String> loadedClasses = new ArrayList<>();
 
         try (URLClassLoader cl =
-                new URLClassLoader(Arrays.stream(files).map(Utils.wrap(File::getCanonicalPath))
-                        .map(filename -> "jar:file:" + filename + "!/").map(Utils.wrap(URL::new))
-                        .toArray(URL[]::new)))
+                new URLClassLoader(
+                        Arrays.stream(files).map(Utils.wrap(File::getCanonicalPath))
+                                .map(filename -> "jar:file:" + filename + "!/")
+                                .map(Utils.wrap(URL::new)).toArray(URL[]::new),
+                        ModLoader.class.getClassLoader()))
         {
             for (File file : files)
                 try (JarFile jar = new JarFile(file))
@@ -294,10 +301,11 @@ public final class ModLoader
 
                         loadedClasses.add(name);
 
-                        classes.add(cl.loadClass(name.substring(0, name.length() - 6)));
+                        classes.add(cl
+                                .loadClass(name.substring(0, name.length() - 6).replace('/', '.')));
                     }
                 }
-                catch (ClassNotFoundException | IOException e)
+                catch (ClassNotFoundException | IOException | NoClassDefFoundError e)
                 {
                     throw new ModLoadingException(
                             Utils.safe(file::getCanonicalPath, file.getAbsolutePath()), e);

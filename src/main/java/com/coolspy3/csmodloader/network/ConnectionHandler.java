@@ -97,7 +97,16 @@ public class ConnectionHandler implements Runnable
 
     public void startInNewThread()
     {
-        new Thread(this).start();
+        Thread thread = new Thread(this);
+
+        thread.setDaemon(true);
+
+        thread.start();
+    }
+
+    private void setState(State state)
+    {
+        this.state = state;
     }
 
     public void setCompression(int threshold)
@@ -218,7 +227,8 @@ public class ConnectionHandler implements Runnable
         {
             e.printStackTrace(System.err);
 
-            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(e));
+            Utils.safeCreateAndWaitFor(
+                    () -> new TextAreaFrame("" + (encCipher == null) + " " + direction, e));
         }
         finally
         {
@@ -278,6 +288,8 @@ public class ConnectionHandler implements Runnable
                                 state = State.STATUS;
                                 break;
                         }
+
+                        other.setState(state);
 
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         baos.write(0x00);
@@ -389,11 +401,11 @@ public class ConnectionHandler implements Runnable
         else
         {
             int uncompressedLength = Utils.readVarInt(is);
+            int dataLength = length - Utils.varIntLen(uncompressedLength);
 
-            if (uncompressedLength == 0) packetData = Utils.readNBytes(is, uncompressedLength);
+            if (uncompressedLength == 0) packetData = Utils.readNBytes(is, dataLength);
             else
             {
-                int dataLength = length - Utils.varIntLen(uncompressedLength);
                 byte[] compressedPackedData = Utils.readNBytes(is, dataLength);
 
                 decompressor.setInput(compressedPackedData);
@@ -405,7 +417,7 @@ public class ConnectionHandler implements Runnable
         }
 
         if (key != null && command == Utils.DO_NOTHING)
-            packetHandler.handleRawPacket(direction, packetData);
+            Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData));
 
         is.reset();
 
@@ -464,15 +476,13 @@ public class ConnectionHandler implements Runnable
 
         if (compressionThreshhold == -1 || packetData.length < compressionThreshhold)
         {
-            safeWrite(() -> {
-                Utils.writeVarInt(packetData.length, os);
+            ByteArrayOutputStream baos = new ByteArrayOutputStream();
 
-                if (compressionThreshhold != -1) Utils.writeVarInt(0, os);
+            if (compressionThreshhold != -1) Utils.writeVarInt(0, baos);
 
-                os.write(packetData);
+            baos.write(packetData);
 
-                os.flush();
-            });
+            safeWrite(baos);
 
             return;
         }

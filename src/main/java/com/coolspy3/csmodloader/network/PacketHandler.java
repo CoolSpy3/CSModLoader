@@ -193,7 +193,7 @@ public class PacketHandler
     public boolean sendPacket(Packet packet)
     {
         return Utils.reporting(() -> {
-            PacketDirection direction = PacketParser.getPacketSpecification(packet).getDirection();
+            PacketDirection direction = PacketParser.getPacketSpecification(packet).direction();
 
             int packetId = PacketParser.getClassId(direction, packet.getClass());
 
@@ -243,7 +243,7 @@ public class PacketHandler
                 Class<? extends Packet>[] types)
         {
             this.id = id;
-            this.func = Utils.reporting(func);
+            this.func = Utils.reporting(func, false);
             this.types = Arrays.asList(types);
         }
 

@@ -44,7 +44,7 @@ public class ServerInstance
     private void startInNewThread() throws IOException
     {
         server = new ServerSocket(25565);
-        new Thread(() -> {
+        Thread thread = new Thread(() -> {
             while (!server.isClosed())
                 try
                 {
@@ -64,13 +64,19 @@ public class ServerInstance
 
                     SwingUtilities.invokeLater(() -> new TextAreaFrame(e));
                 }
-        }).start();
+        });
+
+        thread.setDaemon(true);
+
+        thread.start();
     }
 
     private void shutdown()
     {
         Utils.safe(server::close);
         connections.forEach(Connection::close);
+
+        instance = null;
     }
 
     public static void init(String accessToken, KeyPair rsaKey)

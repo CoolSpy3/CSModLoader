@@ -13,11 +13,13 @@ import java.util.UUID;
 import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.mod.Entrypoint;
+import com.coolspy3.csmodloader.mod.Mod;
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
+@Mod(id = "csmodloader", name = "CSModLoader", version = "1.0.0", description = "The mod loader")
 public class Main
 {
 
@@ -30,7 +32,7 @@ public class Main
 
         {
             Iterator<String> argIttr = Arrays.asList(args).iterator();
-            if (args.length > 0) for (;;)
+            while (argIttr.hasNext())
             {
                 String arg = argIttr.next().toLowerCase();
 
@@ -51,7 +53,12 @@ public class Main
                         continue;
 
                     case "--uuid":
-                        uuid = UUID.fromString(argIttr.next());
+                        String uuidString = argIttr.next();
+
+                        uuid = UUID.fromString(uuidString.substring(0, 8) + "-"
+                                + uuidString.substring(8, 12) + "-" + uuidString.substring(12, 16)
+                                + "-" + uuidString.substring(16, 20) + "-"
+                                + uuidString.substring(20));
                         continue;
 
                     default:
