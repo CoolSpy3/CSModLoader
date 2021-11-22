@@ -49,6 +49,10 @@ public class PacketHandler
 
             if (packetClass == null) return null;
 
+            // If there are no subscribers which care about the Packet, there's no need to parse it
+            if (subscribers.stream().filter(sub -> sub.accepts(packetClass)).count() == 0)
+                return null;
+
             return PacketParser.read(packetClass, packetData);
 
         }, null);
