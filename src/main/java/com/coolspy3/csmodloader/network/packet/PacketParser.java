@@ -114,6 +114,17 @@ public final class PacketParser
         return (ObjectParser<T>) objectParsers.get(type);
     }
 
+    public static ObjectParser<?> getObjectParser(Class<?> type)
+    {
+        return objectParsers.get(type);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T, U extends WrapperType<T>> ObjectParser<T> getWrappedParser(Class<U> type)
+    {
+        return (ObjectParser<T>) objectParsers.get(type);
+    }
+
     public static <T, U> ObjectParser<U> mappingParser(Class<T> baseType, Function<U, T> encMapper,
             Function<T, U> decMapper, Class<U> type) throws IllegalArgumentException
     {
@@ -151,7 +162,7 @@ public final class PacketParser
     public static <T> T readObject(Class<T> type, InputStream is)
             throws ClassCastException, IllegalArgumentException, IOException
     {
-        ObjectParser<?> parser = getParser(type);
+        ObjectParser<?> parser = getObjectParser(type);
 
         if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
 
@@ -161,7 +172,7 @@ public final class PacketParser
     public static <T> Object readAnyObject(Class<T> type, InputStream is)
             throws IllegalArgumentException, IOException
     {
-        ObjectParser<?> parser = getParser(type);
+        ObjectParser<?> parser = getObjectParser(type);
 
         if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
 
@@ -172,7 +183,7 @@ public final class PacketParser
     public static <T, U extends WrapperType<T>> T readWrappedObject(Class<U> type, InputStream is)
             throws IllegalArgumentException, IOException
     {
-        ObjectParser<?> parser = getParser(type);
+        ObjectParser<?> parser = getObjectParser(type);
 
         if (parser == null) throw new IllegalArgumentException("Unknown Type: " + type.getName());
 
