@@ -286,14 +286,7 @@ public final class PacketParser
         Object[] values = packet.getValues();
 
         for (int i = 0; i < types.length; i++)
-        {
-            Class<?> type = types[i];
-
-            if (!objectParsers.containsKey(type))
-                throw new IllegalArgumentException("Unknown Type: " + type.getName());
-
-            objectParsers.get(type).encodeObject(values[i], os);
-        }
+            writeObject(types[i], values[i], os);
     }
 
     public static void writeObject(Class<?> type, Object obj, OutputStream os)
