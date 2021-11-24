@@ -135,6 +135,14 @@ public final class PacketParser
         return ObjectParser.mapping(parser, encMapper, decMapper, type);
     }
 
+    public static <T, U, V extends WrapperType<U>> ObjectParser<U> wrappingMappingParser(
+            Class<T> baseType, Function<U, T> encMapper, Function<T, U> decMapper,
+            Class<U> wrappedType, Class<V> type) throws IllegalArgumentException
+    {
+        return ObjectParser.wrapping(mappingParser(baseType, encMapper, decMapper, wrappedType),
+                type);
+    }
+
     @SuppressWarnings("unchecked")
     public static <T extends Packet> T read(Class<T> packetClass, InputStream is)
             throws IllegalArgumentException, IOException
