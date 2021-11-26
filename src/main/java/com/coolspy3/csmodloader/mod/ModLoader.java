@@ -1,9 +1,13 @@
 package com.coolspy3.csmodloader.mod;
 
 import java.io.File;
+import java.io.FileOutputStream;
 import java.io.IOException;
 import java.net.URL;
 import java.net.URLClassLoader;
+import java.nio.channels.Channels;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -54,11 +58,21 @@ public final class ModLoader
         {
             try
             {
-                for (Class<?> c : loadJar(files))
-                {
-                    Mod mod = c.getAnnotation(Mod.class);
+                Path tempDir = Files.createTempDirectory(null);
+                tempDir.toFile().deleteOnExit();
 
-                    if (mod != null) mods.put(mod, c);
+                for (Class<?> c : loadJar(tempDir, files))
+                {
+                    try
+                    {
+                        Mod mod = c.getAnnotation(Mod.class);
+
+                        if (mod != null) mods.put(mod, c);
+                    }
+                    catch (ArrayStoreException e)
+                    {
+                        // Error finding class - Shouldn't occur with actual mod definitions
+                    }
                 }
             }
             catch (IOException | ModLoadingException e)
@@ -276,14 +290,20 @@ public final class ModLoader
         return true;
     }
 
-    public static Class<?>[] loadJar(File... files) throws IOException, ModLoadingException
+    public static Class<?>[] loadJar(Path tempDir, File... modFile)
+            throws IOException, ModLoadingException
     {
+        // Wrap in ArrayList to avoid UnsupportedOperationException
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(modFile));
+
+        files.addAll(recursivelyLoadLibraries(files, tempDir));
+
         ArrayList<Class<?>> classes = new ArrayList<>();
         ArrayList<String> loadedClasses = new ArrayList<>();
 
         try (URLClassLoader cl =
                 new URLClassLoader(
-                        Arrays.stream(files).map(Utils.wrap(File::getCanonicalPath))
+                        files.stream().map(Utils.wrap(File::getCanonicalPath))
                                 .map(filename -> "jar:file:" + filename + "!/")
                                 .map(Utils.wrap(URL::new)).toArray(URL[]::new),
                         ModLoader.class.getClassLoader()))
@@ -332,6 +352,37 @@ public final class ModLoader
                 throw e;
             }
         }
+    }
+
+    public static ArrayList<File> recursivelyLoadLibraries(List<File> files, Path tempDir)
+            throws IOException
+    {
+        if (files.size() == 0) return new ArrayList<>();
+
+        ArrayList<File> libraries = new ArrayList<>();
+
+        for (File file : files)
+            try (JarFile jar = new JarFile(file))
+            {
+                for (JarEntry entry : Collections.list(jar.entries()))
+                    if (entry.getName().matches("\\QMETA-INF/libraries/\\E.+\\.jar"))
+                    {
+                        File newFile = Files.createTempFile(tempDir, null, null).toFile();
+                        newFile.deleteOnExit();
+                        try (FileOutputStream os = new FileOutputStream(newFile))
+                        {
+                            os.getChannel().transferFrom(
+                                    Channels.newChannel(jar.getInputStream(entry)), 0,
+                                    Long.MAX_VALUE);
+                        }
+
+                        libraries.add(newFile);
+                    }
+            }
+
+        libraries.addAll(recursivelyLoadLibraries(libraries, tempDir));
+
+        return libraries;
     }
 
     public static ArrayList<Mod> getModList()

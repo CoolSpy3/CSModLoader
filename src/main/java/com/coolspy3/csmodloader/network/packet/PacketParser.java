@@ -7,6 +7,7 @@ import java.util.HashMap;
 import java.util.function.Function;
 
 import com.coolspy3.csmodloader.network.PacketDirection;
+import com.coolspy3.csmodloader.util.WrapperException;
 
 public final class PacketParser
 {
@@ -167,7 +168,15 @@ public final class PacketParser
 
         for (int i = 0; i < types.length; i++)
         {
-            values[i] = readAnyObject(types[i], is);
+            try
+            {
+                values[i] = readAnyObject(types[i], is);
+            }
+            catch (Exception e)
+            {
+                throw new WrapperException("Error occured reading packet: " + packetClass.getName()
+                        + " while reading arg (" + i + "): " + types[i].getName(), e);
+            }
         }
 
         return (T) constructors.get(packetClass).apply(values);

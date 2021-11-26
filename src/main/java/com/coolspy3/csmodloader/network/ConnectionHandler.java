@@ -2,6 +2,7 @@ package com.coolspy3.csmodloader.network;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
+import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -416,8 +417,10 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        if (key != null && command == Utils.DO_NOTHING)
-            Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData));
+        if (key != null && command == Utils.DO_NOTHING) Utils.safeExecuteTimeoutSync(
+                () -> Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
+                500, "PacketHandler.handlePacket("
+                        + Utils.readVarInt(new ByteArrayInputStream(packetData)) + ")");
 
         is.reset();
 

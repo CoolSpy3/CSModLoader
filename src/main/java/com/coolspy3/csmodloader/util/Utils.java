@@ -14,6 +14,7 @@ import java.nio.ByteBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.util.Random;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.function.BiFunction;
 import java.util.function.Function;
 import java.util.function.Supplier;
@@ -63,6 +64,54 @@ public final class Utils
         {
             lock.wait();
         }
+    }
+
+    public static void executeTimeoutSync(Runnable func, long timeout, String taskName)
+            throws InterruptedException
+    {
+        executeTimeoutSync(() -> {
+
+            func.run();
+
+            return null;
+
+        }, timeout, taskName, null);
+    }
+
+    @SuppressWarnings("unchecked")
+    public static <T> T executeTimeoutSync(Supplier<T> func, long timeout, String taskName,
+            T defaultValue) throws InterruptedException
+    {
+        Object lock = new Object();
+        AtomicBoolean isRunning = new AtomicBoolean(true);
+        Object[] arr = new Object[] {defaultValue};
+
+        Thread thread = new Thread(() -> {
+            try
+            {
+                arr[0] = func.get();
+            }
+            finally
+            {
+                isRunning.set(false);
+                synchronized (lock)
+                {
+                    lock.notifyAll();
+                }
+            }
+        });
+
+        thread.setDaemon(true);
+        thread.start();
+
+        synchronized (lock)
+        {
+            if (isRunning.get()) lock.wait(timeout);
+        }
+
+        if (isRunning.get()) System.err.println("Timed out while executing task: " + taskName);
+
+        return (T) arr[0];
     }
 
     public static <T> T fromBytes(byte[] bytes, Function<ByteBuffer, T> convFunc)
@@ -225,6 +274,17 @@ public final class Utils
     public static void safeCreateAndWaitFor(Supplier<Frame> createFunc)
     {
         safe(() -> createAndWaitFor(createFunc));
+    }
+
+    public static void safeExecuteTimeoutSync(Runnable func, long timeout, String taskName)
+    {
+        safe(() -> executeTimeoutSync(func, timeout, taskName));
+    }
+
+    public static <T> T safeExecuteTimeoutSync(Supplier<T> func, long timeout, String taskName,
+            T defaultValue)
+    {
+        return safe(() -> executeTimeoutSync(func, timeout, taskName, defaultValue));
     }
 
     public static void noFail(ExceptionRunnable func)

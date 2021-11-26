@@ -40,7 +40,7 @@ public class PacketHandler
         return subscribers.stream().filter(sub -> sub.invoke(p)).count() > 0;
     }
 
-    public void handlePacket(PacketDirection direction, int packetId, InputStream packetData)
+    public boolean handlePacket(PacketDirection direction, int packetId, InputStream packetData)
             throws IOException
     {
         Packet packet = Utils.reporting(() -> {
@@ -57,16 +57,16 @@ public class PacketHandler
 
         }, null);
 
-        if (packet == null) return;
+        if (packet == null) return false;
 
-        if (dispatch(packet)) ConnectionHandler.getLocal().blockPacket();
+        return dispatch(packet);
     }
 
-    public void handleRawPacket(PacketDirection direction, byte[] packetData) throws IOException
+    public boolean handleRawPacket(PacketDirection direction, byte[] packetData) throws IOException
     {
         ByteArrayInputStream bais = new ByteArrayInputStream(packetData);
 
-        handlePacket(direction, Utils.readVarInt(bais), bais);
+        return handlePacket(direction, Utils.readVarInt(bais), bais);
     }
 
     public void register(Object o)
