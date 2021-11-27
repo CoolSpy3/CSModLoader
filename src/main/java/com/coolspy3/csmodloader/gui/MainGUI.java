@@ -80,6 +80,8 @@ class MainGUI extends JPanel implements ActionListener
             ((JButton) tableModel.getValueAt(tableModel.getRowCount() - 1, 6)).setEnabled(false);
         }
 
+        addServerButton.setEnabled(!ServerInstance.isRunning());
+
         if (ServerInstance.isRunning())
         {
             IntStream.range(0, tableModel.getRowCount())
