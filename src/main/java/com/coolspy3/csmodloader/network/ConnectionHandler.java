@@ -228,8 +228,7 @@ public class ConnectionHandler implements Runnable
         {
             e.printStackTrace(System.err);
 
-            Utils.safeCreateAndWaitFor(
-                    () -> new TextAreaFrame("" + (encCipher == null) + " " + direction, e));
+            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(direction.toString(), e));
         }
         finally
         {
@@ -254,16 +253,6 @@ public class ConnectionHandler implements Runnable
             is.mark(length);
 
             int packetId = Utils.readVarInt(is);
-
-            if (packetId == 0x03 || packetId == 0x46)
-            {
-                int compressionThreshhold = Utils.readVarInt(is);
-                other.setCompression(compressionThreshhold);
-
-                command = () -> {
-                    setCompression(compressionThreshhold);
-                };
-            }
 
             if (packetId == 0x00)
             {
@@ -308,8 +297,7 @@ public class ConnectionHandler implements Runnable
                         break;
                 }
             }
-
-            if (packetId == 0x01)
+            else if (packetId == 0x01)
             {
                 if (direction == PacketDirection.CLIENTBOUND)
                 {
@@ -334,8 +322,8 @@ public class ConnectionHandler implements Runnable
 
                     ConnectionHandler handler = this;
 
-                    // Wait until the client enables encryption so that the next call to is.() will
-                    // be decrypted
+                    // Wait until the client enables encryption so that the next call to is.read()
+                    // will be decrypted
                     command = () -> Utils.safe(() -> {
                         synchronized (handler)
                         {
@@ -417,10 +405,25 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        if (key != null && command == Utils.DO_NOTHING) Utils.safeExecuteTimeoutSync(
-                () -> Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
-                500, "PacketHandler.handlePacket("
-                        + Utils.readVarInt(new ByteArrayInputStream(packetData)) + ")");
+        {
+            ByteArrayInputStream bufferedPacketStream = new ByteArrayInputStream(packetData);
+            int packetId = Utils.readVarInt(bufferedPacketStream);
+
+            if (packetId == 0x03 || packetId == 0x46)
+            {
+                int compressionThreshhold = Utils.readVarInt(is);
+                other.setCompression(compressionThreshhold);
+
+                command = () -> {
+                    setCompression(compressionThreshhold);
+                };
+            }
+            else if (key != null && command == Utils.DO_NOTHING) Utils.safeExecuteTimeoutSync(
+                    () -> Utils
+                            .reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
+                    500, "PacketHandler.handlePacket(%s)",
+                    Utils.readVarInt(new ByteArrayInputStream(packetData)));
+        }
 
         is.reset();
 

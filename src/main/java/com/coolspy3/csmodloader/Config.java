@@ -61,16 +61,15 @@ public class Config
 
         try (BufferedReader reader = new BufferedReader(new FileReader(cfgFile)))
         {
-            String data = "", line;
+            StringBuilder data = new StringBuilder();
+            String line;
 
             while ((line = reader.readLine()) != null)
             {
-                data += line;
-                data += "\n";
+                data.append(line).append("\n");
             }
 
-            data = data.substring(0, data.length() - 1);
-            INSTANCE = new Gson().fromJson(data, Config.class);
+            INSTANCE = new Gson().fromJson(data.substring(0, data.length() - 1), Config.class);
         }
     }
 

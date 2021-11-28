@@ -66,8 +66,8 @@ public final class Utils
         }
     }
 
-    public static void executeTimeoutSync(Runnable func, long timeout, String taskName)
-            throws InterruptedException
+    public static void executeTimeoutSync(Runnable func, long timeout, String taskName,
+            Object... args) throws InterruptedException
     {
         executeTimeoutSync(() -> {
 
@@ -75,12 +75,12 @@ public final class Utils
 
             return null;
 
-        }, timeout, taskName, null);
+        }, timeout, taskName, null, taskName, args);
     }
 
     @SuppressWarnings("unchecked")
-    public static <T> T executeTimeoutSync(Supplier<T> func, long timeout, String taskName,
-            T defaultValue) throws InterruptedException
+    public static <T> T executeTimeoutSync(Supplier<T> func, long timeout, T defaultValue,
+            String taskName, Object... args) throws InterruptedException
     {
         Object lock = new Object();
         AtomicBoolean isRunning = new AtomicBoolean(true);
@@ -109,7 +109,8 @@ public final class Utils
             if (isRunning.get()) lock.wait(timeout);
         }
 
-        if (isRunning.get()) System.err.println("Timed out while executing task: " + taskName);
+        if (isRunning.get())
+            System.err.println("Timed out while executing task: " + String.format(taskName, args));
 
         return (T) arr[0];
     }
@@ -148,7 +149,7 @@ public final class Utils
         byte[] requestBytes =
                 (payload instanceof String ? (String) payload : new Gson().toJson(payload))
                         .getBytes(Utils.UTF_8);
-        conn.setRequestProperty("Content-Length", "" + requestBytes.length);
+        conn.setRequestProperty("Content-Length", Integer.toString(requestBytes.length));
 
         try (OutputStream connos = conn.getOutputStream())
         {
@@ -166,15 +167,15 @@ public final class Utils
 
     public static void printHex(byte[] arr)
     {
-        String str = "[";
+        StringBuilder str = new StringBuilder("[");
 
         for (int i = 0; i < arr.length; i++)
         {
-            str += String.format("%02x", arr[i]);
-            if (i < arr.length - 1) str += ", ";
+            str.append(String.format("%02x", arr[i]));
+            if (i < arr.length - 1) str.append(", ");
         }
 
-        System.out.println(str + "]");
+        System.out.println(str.append("]"));
     }
 
     // Credit: https://www.baeldung.com/java-random-string
@@ -276,15 +277,16 @@ public final class Utils
         safe(() -> createAndWaitFor(createFunc));
     }
 
-    public static void safeExecuteTimeoutSync(Runnable func, long timeout, String taskName)
+    public static void safeExecuteTimeoutSync(Runnable func, long timeout, String taskName,
+            Object... args)
     {
-        safe(() -> executeTimeoutSync(func, timeout, taskName));
+        safe(() -> executeTimeoutSync(func, timeout, taskName, args));
     }
 
-    public static <T> T safeExecuteTimeoutSync(Supplier<T> func, long timeout, String taskName,
-            T defaultValue)
+    public static <T> T safeExecuteTimeoutSync(Supplier<T> func, long timeout, T defaultValue,
+            String taskName, Object... args)
     {
-        return safe(() -> executeTimeoutSync(func, timeout, taskName, defaultValue));
+        return safe(() -> executeTimeoutSync(func, timeout, defaultValue, taskName, args));
     }
 
     public static void noFail(ExceptionRunnable func)
