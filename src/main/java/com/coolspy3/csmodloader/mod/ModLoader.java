@@ -240,9 +240,8 @@ public final class ModLoader
                     dependencyParts.length > 1 ? SemanticVersionRange.parse(dependencyParts[1])
                             : new SemanticVersionRange();
 
-            return loadedMods.stream().filter(loadedMod -> dependencyId.equals(loadedMod.id())
-                    && dependencyVersionRange.contains(new SemanticVersion(loadedMod.version())))
-                    .count() == 0;
+            return loadedMods.stream().noneMatch(loadedMod -> dependencyId.equals(loadedMod.id())
+                    && dependencyVersionRange.contains(new SemanticVersion(loadedMod.version())));
         }).collect(Collectors.toList());
     }
 

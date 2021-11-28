@@ -37,6 +37,7 @@ public class PacketHandler
 
     public boolean dispatch(Packet p)
     {
+        // Explicitly call filter to ensure that all subscribers are invoked
         return subscribers.stream().filter(sub -> sub.invoke(p)).count() > 0;
     }
 
@@ -50,7 +51,7 @@ public class PacketHandler
             if (packetClass == null) return null;
 
             // If there are no subscribers which care about the Packet, there's no need to parse it
-            if (subscribers.stream().filter(sub -> sub.accepts(packetClass)).count() == 0)
+            if (subscribers.stream().noneMatch(sub -> sub.accepts(packetClass)))
                 return null;
 
             return PacketParser.read(packetClass, packetData);
@@ -82,7 +83,7 @@ public class PacketHandler
 
                 if (!Modifier.isPublic(mod) || !Modifier.isStatic(mod)) return;
 
-                if (subscribers.stream().filter(sub -> sub.matches(method)).count() > 0) continue;
+                if (subscribers.stream().anyMatch(sub -> sub.matches(method))) continue;
 
                 Class<? extends Packet>[] validTypes = validateMethod(method);
 
@@ -116,7 +117,7 @@ public class PacketHandler
 
             if (!Modifier.isPublic(mod) || Modifier.isStatic(mod)) return;
 
-            if (subscribers.stream().filter(sub -> sub.matches(method)).count() > 0) continue;
+            if (subscribers.stream().anyMatch(sub -> sub.matches(method))) continue;
 
             Class<? extends Packet>[] validTypes = validateMethod(method);
 
@@ -145,7 +146,7 @@ public class PacketHandler
     public final <T extends Packet> void register(ExceptionConsumer<T> func,
             Class<? extends T>... validTypes)
     {
-        if (subscribers.stream().filter(sub -> sub.matches(func)).count() == 0)
+        if (subscribers.stream().noneMatch(sub -> sub.matches(func)))
             subscribers.add(new SubscriberFunction(func, packet -> {
 
                 func.accept((T) packet);
@@ -158,7 +159,7 @@ public class PacketHandler
     public final <T extends Packet> void register(ExceptionFunction<T, Boolean> func,
             Class<? extends T>... validTypes)
     {
-        if (subscribers.stream().filter(sub -> sub.matches(func)).count() == 0)
+        if (subscribers.stream().noneMatch(sub -> sub.matches(func)))
             subscribers.add(new SubscriberFunction(func, packet -> {
 
                 return func.apply((T) packet);
@@ -254,7 +255,7 @@ public class PacketHandler
 
         public boolean accepts(Class<? extends Packet> c)
         {
-            return types.stream().filter(type -> type.isAssignableFrom(c)).count() > 0;
+            return types.stream().anyMatch(type -> type.isAssignableFrom(c));
         }
 
         public boolean matches(Object o)
