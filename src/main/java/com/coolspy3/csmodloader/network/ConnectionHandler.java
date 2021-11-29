@@ -33,6 +33,10 @@ import com.coolspy3.csmodloader.interfaces.IOConsumer;
 import com.coolspy3.csmodloader.util.McUtils;
 import com.coolspy3.csmodloader.util.Utils;
 
+/**
+ * Manages the connection between a Minecraft client and server. An instance of this class handles
+ * only one direction of traffic.
+ */
 public class ConnectionHandler implements Runnable
 {
 
@@ -75,6 +79,19 @@ public class ConnectionHandler implements Runnable
     private ConnectionHandler other;
     private PacketHandler packetHandler;
 
+    /**
+     * Creates a new ConnectionHandler
+     *
+     * @param iSocket The Socket from which to read
+     * @param oSocket The Socket to which to write
+     * @param serverIp The server's hostname. This will be sent to the server to verify you are
+     *        connecting via. a valid endpoint
+     * @param accessToken The player's access token
+     * @param direction The PacketDirection handled by this ConnectionHandler
+     * @param serverKey The KeyPair to use during initial authentication
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public ConnectionHandler(Socket iSocket, Socket oSocket, String serverIp, String accessToken,
             PacketDirection direction, KeyPair serverKey) throws IOException
     {
@@ -96,6 +113,9 @@ public class ConnectionHandler implements Runnable
         this.socketLock = new ReentrantLock();
     }
 
+    /**
+     * Starts this ConnectionHandler's read loop in a new daemon thread
+     */
     public void startInNewThread()
     {
         Thread thread = new Thread(this);
@@ -105,22 +125,43 @@ public class ConnectionHandler implements Runnable
         thread.start();
     }
 
+    /**
+     * Sets the handshaking state of this ConnectionHandler
+     *
+     * @param state The new state
+     */
     private void setState(State state)
     {
         this.state = state;
     }
 
+    /**
+     * Sets the compression threshold of this ConnectionHandler. Can be set to -1 to reset
+     *
+     * @param threshold The new threshold
+     */
     public void setCompression(int threshold)
     {
         this.compressionThreshhold = threshold;
     }
 
+    /**
+     * Preforms initial encryption setup
+     *
+     * @param serverId The serverId sent from the Minecraft server
+     * @param key The public key provided by the Minecraft server
+     */
     public void setupEncryption(String serverId, PublicKey key)
     {
         this.serverId = serverId;
         this.serverPublicKey = key;
     }
 
+    /**
+     * Enables encryption on this ConnectionHandler.
+     *
+     * @param secretKey The secret key to use when reading from and writing to the packet stream
+     */
     public void enableEncryption(SecretKey secretKey)
     {
         this.key = secretKey;
@@ -135,27 +176,59 @@ public class ConnectionHandler implements Runnable
         os = new BufferedOutputStream(new CipherOutputStream(os, encCipher));
     }
 
+    /**
+     * Blocks the packet which is being processed from being forwarded to the output stream
+     */
     void blockPacket()
     {
         blockPacket = true;
     }
 
+    /**
+     * Writes the data contained in the provided stream to this ConnectionHandler's OutputStream
+     * after prefixing its length.
+     *
+     * @param baos The stream to copy
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public void safeWrite(ByteArrayOutputStream baos) throws IOException
     {
         safeWrite(baos.toByteArray());
     }
 
+    /**
+     * Used to provide a reference to the ConnectionHandler responsible for the opposite direction
+     * of traffic. This should be called before this handler's read loop is started.
+     *
+     * @param other The ConnectionHandler responsible for the opposite direction of traffic
+     */
     private void setOther(ConnectionHandler other)
     {
         this.other = other;
     }
 
+    /**
+     * Sets the PacketHandler which will be used to process packets for this ConnectionHandler. This
+     * should be called before this handler's read loop is started.
+     *
+     * @param packetHandler The PacketHandler which will be used to process packets for this
+     *        ConnectionHandler
+     */
     private void setPacketHandler(PacketHandler packetHandler)
     {
         this.packetHandler = packetHandler;
     }
 
-    private void safeWrite(byte[] data) throws IOException
+    /**
+     * Writes the specified data to this ConnectionHandler's OutputStream after prefixing its
+     * length.
+     *
+     * @param data The data to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
+    public void safeWrite(byte[] data) throws IOException
     {
         safeWrite(() -> {
             Utils.writeVarInt(data.length, os);
@@ -164,6 +237,14 @@ public class ConnectionHandler implements Runnable
         });
     }
 
+    /**
+     * Acquires the write lock for this ConnectionHandler's OutputStream and executes the specified
+     * command.
+     *
+     * @param writeCommand The command to execute
+     *
+     * @throws IOException If an I/O error occurs
+     */
     private void safeWrite(IOCommand writeCommand) throws IOException
     {
         socketLock.lock();

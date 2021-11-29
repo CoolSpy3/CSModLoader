@@ -33,35 +33,82 @@ import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
 import com.coolspy3.csmodloader.util.WrapperException;
 
+/**
+ * Handles the loading and validation of mods
+ */
 public final class ModLoader
 {
 
     public static final String[] BASIC_MOD_INFO = new String[] {"Mod Id", "Version"};
-    public static final Function<Mod, String[]> MODINFOMAPP_FUNCTION =
+    public static final Function<Mod, String[]> MOD_INFO_MAP_FUNCTION =
             mod -> new String[] {mod.id(), mod.version()};
     private static boolean modsLoaded = false;
     private static ArrayList<Mod> modList = new ArrayList<>();
 
+    /**
+     * Attempts to load all mods in the "csmods" directory under {@link GameArgs#gameDir}.
+     *
+     * This method may only be called once (typically as part of the mod loader startup routine). It
+     * imposes the following restrictions on loaded mods:
+     *
+     * 1) All classes annotated with {@link Mod} must implement {@link Entrypoint}
+     *
+     * 2) All mod definitions must be valid
+     *
+     * 3) No two mods may have the same id
+     *
+     * 4) All mods which require dependencies must have those dependencies met. Circular
+     * dependencies are not allowed.
+     *
+     * 5) All classes annotated with {@link Mod} must provide a public constructor which takes 0
+     * arguments.
+     *
+     * The exception is the mod definition provided by {@link Main} which does not have an
+     * associated entrypoint or constructor, but is provided to allow this version of the loader to
+     * be used as a dependency.
+     *
+     * If any of the above conditions are not met, this function will report the error to the error
+     * log and the user and return <code>null</code>.
+     *
+     * All classes should be available at the time their <clinit> blocks are called, however, mods
+     * should attempt to execute code in their constructors which are guaranteed to be called such
+     * that mods' dependencies' constructors will be invoked first.
+     *
+     * When mods are initialized during the server connection phase, their <code>create</code> and
+     * <code>init</code> methods are guaranteed to be called in the same order as their
+     * constructors.
+     *
+     * @return The entrypoints of all loaded mods in the order in which they were loaded or
+     *         <code>null</code> if an error occurred
+     *
+     * @see #loadJars(Path, File...)
+     * @see #validateMod(Mod)
+     */
     public static ArrayList<Entrypoint> loadMods()
     {
-        if (modsLoaded) return null;
+        synchronized (ModLoader.class)
+        {
+            if (modsLoaded) return null;
 
-        modsLoaded = true;
+            modsLoaded = true;
+        }
 
         HashMap<Mod, Class<?>> mods = new HashMap<>();
 
+        // Get all jar files
         File[] files = GameArgs.get().gameDir.toPath().resolve("csmods").toFile().listFiles(
                 ((Predicate<File>) new FileNameExtensionFilter("Jar Files", "jar")::accept)
                         .and(File::isFile)::test);
         files = files == null ? new File[] {} : files;
 
+        // Find all classes with a Mod declaration
         {
             try
             {
                 Path tempDir = Files.createTempDirectory(null);
                 tempDir.toFile().deleteOnExit();
 
-                for (Class<?> c : loadJar(tempDir, files))
+                for (Class<?> c : loadJars(tempDir, files))
                 {
                     try
                     {
@@ -85,6 +132,7 @@ public final class ModLoader
             }
         }
 
+        // Ensure all mods implement Entrypoint
         {
             List<Mod> nonEntrypointMods = mods.keySet().stream()
                     .filter(mod -> !Entrypoint.class.isAssignableFrom(mods.get(mod)))
@@ -93,19 +141,20 @@ public final class ModLoader
             if (!nonEntrypointMods.isEmpty())
             {
                 System.err.println("The following mods do not implement Entrypoint:\n"
-                        + nonEntrypointMods.stream().map(MODINFOMAPP_FUNCTION)
+                        + nonEntrypointMods.stream().map(MOD_INFO_MAP_FUNCTION)
                                 .map(info -> info[0] + ":" + info[1])
                                 .collect(Collectors.joining("\n")));
 
                 Utils.safeCreateAndWaitFor(
                         () -> new ListFrame("One or more mods do not implement Entrypoint!",
-                                BASIC_MOD_INFO, nonEntrypointMods.stream().map(MODINFOMAPP_FUNCTION)
-                                        .toArray(String[][]::new)));
+                                BASIC_MOD_INFO, nonEntrypointMods.stream()
+                                        .map(MOD_INFO_MAP_FUNCTION).toArray(String[][]::new)));
 
                 return null;
             }
         }
 
+        // Validate mod definitions
         {
             List<Mod> invalidMods = mods.keySet().stream().filter(mod -> !validateMod(mod))
                     .collect(Collectors.toList());
@@ -113,17 +162,18 @@ public final class ModLoader
             if (!invalidMods.isEmpty())
             {
                 System.err.println("The following mods are invalid:\n" + invalidMods.stream()
-                        .map(MODINFOMAPP_FUNCTION).map(info -> info[0] + ":" + info[1])
+                        .map(MOD_INFO_MAP_FUNCTION).map(info -> info[0] + ":" + info[1])
                         .collect(Collectors.joining("\n")));
 
                 Utils.safeCreateAndWaitFor(() -> new ListFrame("One or more mods are invalid!",
                         BASIC_MOD_INFO,
-                        invalidMods.stream().map(MODINFOMAPP_FUNCTION).toArray(String[][]::new)));
+                        invalidMods.stream().map(MOD_INFO_MAP_FUNCTION).toArray(String[][]::new)));
 
                 return null;
             }
         }
 
+        // Require distinct mod ids
         if (mods.keySet().stream().map(Mod::id).distinct().count() != mods.size())
         {
             List<String> overlappingModIds =
@@ -135,15 +185,17 @@ public final class ModLoader
                             .collect(Collectors.toList());
 
             System.err.println("The following mods have the same id:\n" + overlappingMods.stream()
-                    .map(MODINFOMAPP_FUNCTION).map(info -> info[0] + ":" + info[1])
+                    .map(MOD_INFO_MAP_FUNCTION).map(info -> info[0] + ":" + info[1])
                     .collect(Collectors.joining("\n")));
 
             Utils.safeCreateAndWaitFor(() -> new ListFrame("One or more mods have the same id!",
                     BASIC_MOD_INFO,
-                    overlappingMods.stream().map(MODINFOMAPP_FUNCTION).toArray(String[][]::new)));
+                    overlappingMods.stream().map(MOD_INFO_MAP_FUNCTION).toArray(String[][]::new)));
 
             return null;
         }
+
+        // Load mods (dependencies first)
 
         ArrayList<Entrypoint> entrypoints = new ArrayList<>();
         ArrayList<Mod> loadedMods = new ArrayList<>();
@@ -190,8 +242,11 @@ public final class ModLoader
                 return null;
             }
         }
+        // If true, one or more mods was loaded during the previous iteration and more mods have to
+        // be loaded. (ie. something can happen during the next iteration)
         while (numLoadedMods.intValue() != 0 && !unloadedMods.isEmpty());
 
+        // One or more mods were missing dependencies
         if (unloadedMods.size() != 0)
         {
             Map<Mod, List<String>> missingDependencies =
@@ -221,7 +276,18 @@ public final class ModLoader
         return entrypoints;
     }
 
+    /**
+     * Checks whether all of a mods dependencies have been loaded. This method checks to make sure
+     * that all provided mod definitions are valid
+     *
+     * @param mod The mod to check
+     * @param loadedMods A list of all mods which have already been loaded
+     * @return A list of all missing dependencies in the same format as {@link Mod#dependencies()}
+     *
+     * @throws IllegalArgumentException If one or more provided mods are invalid
+     */
     public static List<String> getMissingDependencies(Mod mod, Collection<Mod> loadedMods)
+            throws IllegalArgumentException
     {
         if (validateMod(mod) && loadedMods.stream().map(ModLoader::validateMod)
                 .allMatch(Predicate.isEqual(true)))
@@ -230,6 +296,16 @@ public final class ModLoader
         throw new IllegalArgumentException("One or more mods are invalid!");
     }
 
+    /**
+     * Checks whether all of a mods dependencies have been loaded. This method does not check to
+     * make sure that all provided mod definitions are valid
+     *
+     * @param mod The mod to check
+     * @param loadedMods A list of all mods which have already been loaded
+     * @return A list of all missing dependencies in the same format as {@link Mod#dependencies()}
+     *
+     * @throws IllegalArgumentException If one or more provided mods are invalid
+     */
     private static List<String> getMissingDependenciesValidated(Mod mod, Collection<Mod> loadedMods)
     {
         return Stream.of(mod.dependencies()).filter(dependency -> {
@@ -245,6 +321,24 @@ public final class ModLoader
         }).collect(Collectors.toList());
     }
 
+    /**
+     * Validates a mod definition.
+     *
+     * A mod definition is considered valid if:
+     *
+     * 1) {@link Mod#id()} contains only: alpha-numeric characters, "-", and "_"
+     *
+     * 2) {@link Mod#version()} is a valid {@link SemanticVersion}
+     *
+     * 3) All {@link Mod#dependencies()} are a valid modid followed by a colon and a valid
+     * {@link SemanticVersionRange}
+     *
+     * @param mod The mod definition to validate
+     * @return Whether the provided mod definition is valid
+     *
+     * @see SemanticVersion#validate(String)
+     * @see SemanticVersionRange#validate(String)
+     */
     public static boolean validateMod(Mod mod)
     {
         if (!mod.id().matches("[a-zA-Z0-9_\\-]+"))
@@ -289,11 +383,26 @@ public final class ModLoader
         return true;
     }
 
-    public static Class<?>[] loadJar(Path tempDir, File... modFile)
+    /**
+     * Loads all of the provided mod jars and their contained classes. During this process, all jars
+     * contained in the mods' META-INF/libraries directory are recursively extracted into
+     * <code>tempDir</code>, loaded, and marked for deletion at the end of the program
+     *
+     * @param tempDir The directory in which to extract library jars
+     * @param modFiles The jars of the mod files to load
+     * @return An array containing the classes of all loaded mods and libraries
+     *
+     * @throws IOException If an I/O error occurs
+     * @throws ModLoadingException If an error occurs while loading the mod classes
+     *
+     * @see #recursivelyLoadLibraries(List, Path)
+     * @see File#deleteOnExit()
+     */
+    public static Class<?>[] loadJars(Path tempDir, File... modFiles)
             throws IOException, ModLoadingException
     {
-        // Wrap in ArrayList to avoid UnsupportedOperationException
-        ArrayList<File> files = new ArrayList<>(Arrays.asList(modFile));
+        // Wrap in ArrayList to allow adding of new elements
+        ArrayList<File> files = new ArrayList<>(Arrays.asList(modFiles));
 
         files.addAll(recursivelyLoadLibraries(files, tempDir));
 
@@ -353,6 +462,18 @@ public final class ModLoader
         }
     }
 
+    /**
+     * Recursively extracts all jars in the provides jars' META-INF/libraries directory into the
+     * provided directory and marks them for deletion at the end of the program.
+     *
+     * @param files The jar files to search
+     * @param tempDir The directory in which to extract the found libraries
+     * @return A list containing all of the extracted jars
+     *
+     * @throws IOException
+     *
+     * @see {@link File#deleteOnExit()}
+     */
     public static ArrayList<File> recursivelyLoadLibraries(List<File> files, Path tempDir)
             throws IOException
     {
@@ -364,7 +485,7 @@ public final class ModLoader
             try (JarFile jar = new JarFile(file))
             {
                 for (JarEntry entry : Collections.list(jar.entries()))
-                    if (entry.getName().matches("\\QMETA-INF/libraries/\\E.+\\.jar"))
+                    if (entry.getName().matches("\\QMETA-INF/libraries/\\E[^\\/]*\\.jar"))
                     {
                         File newFile = Files.createTempFile(tempDir, null, null).toFile();
                         newFile.deleteOnExit();
@@ -384,6 +505,11 @@ public final class ModLoader
         return libraries;
     }
 
+    /**
+     * @return The mod definitions of all mods which have been loaded.
+     *
+     * @see #loadMods()
+     */
     public static ArrayList<Mod> getModList()
     {
         return new ArrayList<>(modList);

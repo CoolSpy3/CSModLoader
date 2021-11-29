@@ -9,9 +9,15 @@ import java.util.stream.Stream;
 
 import com.coolspy3.csmodloader.util.Utils;
 
+/**
+ * Contains default ObjectParsers for common types
+ */
 public final class Parsers
 {
 
+    /**
+     * @return The ObjectParsers defined by this class
+     */
     public static ObjectParser<?>[] defaults()
     {
         return new ObjectParser[] {
@@ -48,11 +54,26 @@ public final class Parsers
                         is -> Utils.box(Utils.readBytes(is)), Byte[].class)};
     }
 
+    /**
+     * Calls {@link PacketParser#addParser(ObjectParser)} for all parsers returned by
+     * {@link #defaults()}.
+     */
     public static void registerDefaults()
     {
         Stream.of(defaults()).forEach(PacketParser::addParser);
     }
 
+    /**
+     * Creates an object parser which can parse a fixed number of bytes
+     * 
+     * @param <T> The type of the parser
+     * @param length The number of bytes used to encode each object
+     * @param encFunc A function which stores the object into a ByteBuffer
+     * @param decFunc A function which reads the object from a ByteBuffer
+     * @param type The class type of the parser
+     *
+     * @return The new parser
+     */
     public static <T> ObjectParser<T> ofNumber(int length,
             BiFunction<ByteBuffer, T, ByteBuffer> encFunc, Function<ByteBuffer, T> decFunc,
             Class<T> type)
@@ -60,12 +81,29 @@ public final class Parsers
         return ObjectParser.of(getBytes(length, encFunc), fromBytes(decFunc), length, type);
     }
 
+    /**
+     * Creates a function which serializes an object
+     *
+     * @param <T> The object type to serialize
+     * @param length The number of bytes encoded by each object
+     * @param convFunc A function which stores the object into a ByteBuffer
+     *
+     * @return A function which serializes the object type
+     */
     public static <T> Function<T, Byte[]> getBytes(int length,
             BiFunction<ByteBuffer, T, ByteBuffer> convFunc)
     {
         return v -> Utils.box(Utils.getBytes(v, length, convFunc));
     }
 
+    /**
+     * Creates a function which deserializes an object
+     *
+     * @param <T> The object type to deserialize
+     * @param convFunc A function which reads the object from a ByteBuffer
+     *
+     * @return A function which deserializes the object type
+     */
     public static <T> Function<Byte[], T> fromBytes(Function<ByteBuffer, T> convFunc)
     {
         return b -> Utils.fromBytes(Utils.unbox(b), convFunc);
