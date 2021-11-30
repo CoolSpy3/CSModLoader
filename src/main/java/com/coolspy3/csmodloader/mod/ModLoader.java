@@ -68,18 +68,17 @@ public final class ModLoader
      * be used as a dependency.
      *
      * If any of the above conditions are not met, this function will report the error to the error
-     * log and the user and return <code>null</code>.
+     * log and the user and return {@code null}.
      *
      * All classes should be available at the time their <clinit> blocks are called, however, mods
      * should attempt to execute code in their constructors which are guaranteed to be called such
      * that mods' dependencies' constructors will be invoked first.
      *
-     * When mods are initialized during the server connection phase, their <code>create</code> and
-     * <code>init</code> methods are guaranteed to be called in the same order as their
-     * constructors.
+     * When mods are initialized during the server connection phase, their {@code create} and
+     * {@code init} methods are guaranteed to be called in the same order as their constructors.
      *
      * @return The entrypoints of all loaded mods in the order in which they were loaded or
-     *         <code>null</code> if an error occurred
+     *         {@code null} if an error occurred
      *
      * @see #loadJars(Path, File...)
      * @see #validateMod(Mod)
@@ -386,7 +385,7 @@ public final class ModLoader
     /**
      * Loads all of the provided mod jars and their contained classes. During this process, all jars
      * contained in the mods' META-INF/libraries directory are recursively extracted into
-     * <code>tempDir</code>, loaded, and marked for deletion at the end of the program
+     * {@code tempDir}, loaded, and marked for deletion at the end of the program
      *
      * @param tempDir The directory in which to extract library jars
      * @param modFiles The jars of the mod files to load

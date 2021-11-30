@@ -423,7 +423,7 @@ public final class Utils
 
         do
         {
-            if (bitOffset == 35) throw new RuntimeException("VarInt is too big");
+            if (bitOffset == 35) throw new IOException("VarInt is too big");
 
             currentByte = readByte(is);
             // System.out.println(String.format("%02x", currentByte));
@@ -444,7 +444,7 @@ public final class Utils
 
         do
         {
-            if (bitOffset == 70) throw new RuntimeException("VarLong is too big");
+            if (bitOffset == 70) throw new IOException("VarLong is too big");
 
             currentByte = readByte(is);
             value |= (currentByte & 0b01111111) << bitOffset;

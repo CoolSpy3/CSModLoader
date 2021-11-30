@@ -56,7 +56,7 @@ public class MainWindow extends JFrame
 
     /**
      * Updates the content displayed on the global instance of the window. This is equivalent to
-     * invoking <code>get().setContent(newContent)</code>
+     * invoking {@code get().setContent(newContent)}
      *
      * @param newContent The new content to display
      */

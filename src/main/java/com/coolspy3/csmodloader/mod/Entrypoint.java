@@ -12,7 +12,7 @@ public interface Entrypoint
 
     /**
      * Creates a new Entrypoint which will be used to call {@link #init(PacketHandler)}. This
-     * default implementation returns <code>this</code>.
+     * default implementation returns {@code this}.
      *
      * @return The entrypoint on which to call {@link #init(PacketHandler)}.
      */
@@ -23,10 +23,10 @@ public interface Entrypoint
 
     /**
      * Preforms optional initialization for this mod. Implementing mods should use this to make one
-     * or more calls to <code>PacketHandler.register</code>.
+     * or more calls to {@code PacketHandler.register}.
      *
      * NOTE: This is called before the connection to the server is setup, so
-     * {@link ConnectionHandler#getLocal()} will return <code>null</code>
+     * {@link ConnectionHandler#getLocal()} will return {@code null}.
      *
      * @param handler The PacketHandler which will be assigned to this instance of the mod.
      */

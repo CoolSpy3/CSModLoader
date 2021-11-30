@@ -281,8 +281,7 @@ public final class PacketParser
      *
      * @return The new parser
      *
-     * @throws IllegalArgumentException If no parser is registered for the provided
-     *         <code>baseType</code>
+     * @throws IllegalArgumentException If no parser is registered for the provided {@code baseType}
      *
      * @see #addParser(ObjectParser)
      */
@@ -311,7 +310,7 @@ public final class PacketParser
      * @return The new parser
      *
      * @throws IllegalArgumentException If no parser is registered for the provided
-     *         <code>wrappingType</code>
+     *         {@code wrappingType}
      *
      * @see #addParser(ObjectParser)
      */
@@ -338,8 +337,7 @@ public final class PacketParser
      *
      * @return The new parser
      *
-     * @throws IllegalArgumentException If no parser is registered for the provided
-     *         <code>baseType</code>
+     * @throws IllegalArgumentException If no parser is registered for the provided {@code baseType}
      *
      * @see #addParser(ObjectParser)
      */
