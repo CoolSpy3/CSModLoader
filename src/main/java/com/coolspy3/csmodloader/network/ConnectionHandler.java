@@ -318,6 +318,12 @@ public class ConnectionHandler implements Runnable
         }
     }
 
+    /**
+     * Attempts to read and process a packet from the input stream
+     *
+     * @throws DataFormatException If invalid compressed data is read
+     * @throws IOException If an I/O error occurs
+     */
     protected void readLoop() throws DataFormatException, IOException
     {
         int length = Utils.readVarInt(is);
@@ -518,6 +524,16 @@ public class ConnectionHandler implements Runnable
         command.run();
     }
 
+    /**
+     * Attempts to write a packet to this ConnectionHandler's OutputStream
+     *
+     * @param direction The direction in which to send the packet
+     * @param packetId The id of the packet to send
+     * @param writeFunc A function which, when called, will write the packet to the provided
+     *        OutputStream
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public void write(PacketDirection direction, int packetId, IOConsumer<OutputStream> writeFunc)
             throws IOException
     {
@@ -535,6 +551,15 @@ public class ConnectionHandler implements Runnable
         write(direction, packetId, baos.toByteArray());
     }
 
+    /**
+     * Attempts to write a packet to this ConnectionHandler's OutputStream
+     *
+     * @param direction The direction in which to send the packet
+     * @param packetId The id of the packet to send
+     * @param packetData A byte array containing the data to write to the OutputStream
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public void write(PacketDirection direction, int packetId, byte[] packetData) throws IOException
     {
         if (direction != this.direction)
@@ -552,6 +577,14 @@ public class ConnectionHandler implements Runnable
         write(direction, baos.toByteArray());
     }
 
+    /**
+     * Attempts to write a packet to this ConnectionHandler's OutputStream
+     *
+     * @param direction The direction in which to send the packet
+     * @param packetData A byte array containing the data to write to the OutputStream
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public void write(PacketDirection direction, byte[] packetData) throws IOException
     {
         if (direction != this.direction)
@@ -593,6 +626,22 @@ public class ConnectionHandler implements Runnable
         safeWrite(baos);
     }
 
+    /**
+     * Creates a pair of ConnectionHandlers, configures them to handle traffic between the supplied
+     * sockets, and starts them using {@link #startInNewThread()}.
+     *
+     * @param client A Socket connected to the Minecraft client
+     * @param server A Socket connected to the Minecraft server
+     * @param host The server's hostname. This will be sent to the server to verify you are
+     *        connecting via. a valid endpoint
+     * @param accessToken The player's access token
+     * @param direction The PacketDirection handled by this ConnectionHandler
+     * @param key The KeyPair to use during initial authentication
+     *
+     * @return A Connection object which can be used to manage both handlers\
+     *
+     * @throws IOException If an I/O error occurs
+     */
     static Connection start(Socket client, Socket server, String host, String accessToken,
             KeyPair key) throws IOException
     {
@@ -617,6 +666,9 @@ public class ConnectionHandler implements Runnable
         }, () -> !client.isClosed() || !server.isClosed());
     }
 
+    /**
+     * @return The ConnectionHandler responsible for handling traffic on this thread
+     */
     public static ConnectionHandler getLocal()
     {
         return localHandler.get();
