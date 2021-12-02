@@ -251,8 +251,7 @@ public class PacketHandler
                 Arrays.stream(subscribeAnnotation.acceptedPacketTypes())
                         .filter(packetType::isAssignableFrom).toArray(Class[]::new);
 
-        return validTypes.length == 0 ? new Class[] {(Class<? extends Packet>) packetType}
-                : validTypes;
+        return validTypes;
     }
 
     /**
@@ -314,17 +313,40 @@ public class PacketHandler
         if (PacketHandler.mods.isEmpty()) PacketHandler.mods = mods;
     }
 
+    /**
+     * An internal class designating the basic contract for a subscriber to the packet stream
+     */
     private static final class SubscriberFunction
     {
 
+        /**
+         * A unique id for this SubscriberFunction
+         */
         private final Object id;
+        /**
+         * The function which will be called when a valid packet is received. If this function
+         * returns {@code true}, it will be interpreted as a request to block the processed packet.
+         */
         private final Function<Packet, Boolean> func;
+        /**
+         * A list of packet types accepted by this function
+         */
         private final List<Class<? extends Packet>> types;
 
+        /**
+         * Creates a new SubscriberFunction
+         *
+         * @param id A unique id for this SubscriberFunction
+         * @param func The function to call when a valid packet is received. It will be assumed to
+         *        never attempt to block packets.
+         * @param types The packet types accepted by this SubscriberFunction
+         *
+         * @throws NullPointerException If any of the arguments are null
+         */
         public SubscriberFunction(Object id, ExceptionConsumer<Packet> func,
                 Class<? extends Packet>[] types) throws NullPointerException
         {
-            this(id, packet -> {
+            this(id, func == null ? null : packet -> {
 
                 func.accept(packet);
 
@@ -333,24 +355,59 @@ public class PacketHandler
             }, types);
         }
 
+        /**
+         * Creates a new SubscriberFunction
+         *
+         * @param id A unique id for this SubscriberFunction
+         * @param func The function which will be called when a valid packet is received. If this
+         *        function returns {@code true}, it will be interpreted as a request to block the
+         *        processed packet.
+         * @param types The packet types accepted by this SubscriberFunction
+         *
+         * @throws NullPointerException If any of the arguments are null
+         */
         public SubscriberFunction(Object id, ExceptionFunction<Packet, Boolean> func,
                 Class<? extends Packet>[] types) throws NullPointerException
         {
             this.id = Objects.requireNonNull(id);
-            this.func = Utils.reporting(func, false);
+            this.func = Utils.reporting(Objects.requireNonNull(func), false);
             this.types = Arrays.asList(types);
         }
 
+        /**
+         * Checks if this SubscriberFunction accepts the given packet type and, if so, sends it to
+         * the underlying function.
+         *
+         * @param p The packet to send
+         *
+         * @return Whether the function requested to block the sent packet or {@code false} if the
+         *         packet cannot be accepted
+         */
         public boolean invoke(Packet p)
         {
             return accepts(p.getClass()) ? func.apply(p) : false;
         }
 
+        /**
+         * Checks whether this SubscriberFunction can process the provided packet class
+         *
+         * @param c The class to check
+         *
+         * @return Whether this SubscriberFunction can process the provided packet class
+         */
         public boolean accepts(Class<? extends Packet> c)
         {
             return types.stream().anyMatch(type -> type.isAssignableFrom(c));
         }
 
+        /**
+         * Compares the {@link #id} field of this Packet to the provided object using
+         * {@link Object#equals(Object)}.
+         *
+         * @param o The object to compare to
+         *
+         * @return Whether the two objects are equal
+         */
         public boolean matches(Object o)
         {
             return id.equals(o);
