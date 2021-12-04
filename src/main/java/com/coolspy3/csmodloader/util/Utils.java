@@ -284,6 +284,7 @@ public final class Utils
         System.out.println(str.append("]"));
     }
 
+    // Credit: https://www.baeldung.com/java-random-string
     /**
      * Generates a random alpha-numeric String
      *
@@ -291,7 +292,6 @@ public final class Utils
      *
      * @return The random String
      */
-    // Credit: https://www.baeldung.com/java-random-string
     public static String randomString(int length)
     {
         int leftLimit = 48; // numeral '0'
@@ -511,6 +511,13 @@ public final class Utils
         return safe(() -> executeTimeoutSync(func, timeout, defaultValue, taskName, args));
     }
 
+    /**
+     * Executes a function, assuming any exceptions to be fatal errors and terminating the program.
+     * This should only be called when the occurrence of an exception should be impossible with the
+     * assumed system configuration.
+     *
+     * @param func The function to execute
+     */
     public static void noFail(ExceptionRunnable func)
     {
         try
@@ -528,11 +535,29 @@ public final class Utils
         }
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #noFail(ExceptionSupplier)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> noFail(ExceptionFunction<T, U> func)
     {
         return t -> Utils.noFail(() -> func.apply(t));
     }
 
+    /**
+     * Executes a function, assuming any exceptions to be fatal errors and terminating the program.
+     * This should only be called when the occurrence of an exception should be impossible with the
+     * assumed system configuration.
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     *
+     * @return The value returned by the function
+     */
     public static <T> T noFail(ExceptionSupplier<T> func)
     {
         try
@@ -552,6 +577,16 @@ public final class Utils
         }
     }
 
+    /**
+     * Reads a single byte of data from an InputStream, throwing an {@link EOFException} of the end
+     * of the stream is reached.
+     *
+     * @param is The stream from which to read
+     *
+     * @return The read byte
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static byte readByte(InputStream is) throws IOException
     {
         int i = is.read();
@@ -560,32 +595,83 @@ public final class Utils
         return (byte) i;
     }
 
-    public static void writeByte(long b, OutputStream os) throws IOException
+    /**
+     * Writes a single byte of data to an OutputStream
+     *
+     * @param b THe byte to write
+     * @param os The stream to which to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
+    public static void writeByte(int b, OutputStream os) throws IOException
     {
-        os.write((byte) b);
+        os.write(b & 0xFF);
     }
 
+    /**
+     * Reads a byte array prefixed with its length encoded as a VarInt from an InputStream.
+     *
+     * @param is The InputStream from which to read
+     *
+     * @return The read bytes
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static byte[] readBytes(InputStream is) throws IOException
     {
         return readNBytes(is, readVarInt(is));
     }
 
+    /**
+     * Writes an array of bytes to an OutputStream after prefixing its length encoded as a VarInt
+     *
+     * @param bytes The bytes to write
+     * @param os The OutputStream to which to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static void writeBytes(byte[] bytes, OutputStream os) throws IOException
     {
         writeVarInt(bytes.length, os);
         os.write(bytes);
     }
 
+    /**
+     * Reads a UTF-8 encoded String prefixed with its length in bytes encoded as a VarInt from an
+     * InputStream.
+     *
+     * @param is The InputStream from which to read
+     *
+     * @return The read String
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static String readString(InputStream is) throws IOException
     {
         return new String(readBytes(is), UTF_8);
     }
 
+    /**
+     * Writes a String encoded in UTF-8 to an OutputStream after prefixing its length in bytes
+     * encoded as a VarInt
+     *
+     * @param str The String to write
+     * @param os The OutputStream to which to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static void writeString(String str, OutputStream os) throws IOException
     {
         writeBytes(str.getBytes(UTF_8), os);
     }
 
+    /**
+     * Unboxes the given byte array
+     *
+     * @param arr The array to inbox
+     *
+     * @return The unboxed array
+     */
     public static byte[] unbox(Byte[] arr)
     {
         byte[] out = new byte[arr.length];
@@ -596,6 +682,13 @@ public final class Utils
         return out;
     }
 
+    /**
+     * Executes a function wrapping any thrown exceptions in a WrapperException
+     *
+     * @param func The function to execute
+     *
+     * @throws WrapperException If the function throws an exception
+     */
     public static void wrap(ExceptionRunnable func) throws WrapperException
     {
         try
@@ -608,11 +701,29 @@ public final class Utils
         }
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #wrap(ExceptionSupplier)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> wrap(ExceptionFunction<T, U> func) throws WrapperException
     {
         return t -> Utils.wrap(() -> func.apply(t));
     }
 
+    /**
+     * Executes a function wrapping any thrown exceptions in a WrapperException
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     *
+     * @return The value returned by the function
+     *
+     * @throws WrapperException If the function throws an exception
+     */
     public static <T> T wrap(ExceptionSupplier<T> func) throws WrapperException
     {
         try
@@ -625,6 +736,16 @@ public final class Utils
         }
     }
 
+    /**
+     * Reads a specified number of bytes from an InputStream
+     *
+     * @param is The InputStream from which to read
+     * @param len The number of bytes to read
+     *
+     * @return The read bytes
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static byte[] readNBytes(InputStream is, int len) throws IOException
     {
         byte[] buf = new byte[len];
@@ -637,6 +758,15 @@ public final class Utils
     }
 
     // Credit: https://wiki.vg/index.php?title=Protocol&oldid=7368#With_compression
+    /**
+     * Reads a variable length integer from an InputStream
+     *
+     * @param is The InputStream from which to read
+     *
+     * @return The read integer value
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static int readVarInt(InputStream is) throws IOException
     {
         int value = 0;
@@ -658,6 +788,15 @@ public final class Utils
         return value;
     }
 
+    /**
+     * Reads a variable length long from an InputStream
+     *
+     * @param is The InputStream from which to read
+     *
+     * @return The read long value
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static long readVarLong(InputStream is) throws IOException
     {
         long value = 0;
@@ -678,6 +817,13 @@ public final class Utils
         return value;
     }
 
+    /**
+     * Writes a variable length integer to an OutputStream
+     *
+     * @param is The OutputStream to which to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static void writeVarInt(int value, OutputStream os) throws IOException
     {
         while (true)
@@ -697,18 +843,25 @@ public final class Utils
         }
     }
 
+    /**
+     * Writes a variable length long to an OutputStream
+     *
+     * @param is The OutputStream to which to write
+     *
+     * @throws IOException If an I/O error occurs
+     */
     public static void writeVarLong(long value, OutputStream os) throws IOException
     {
         while (true)
         {
             if ((value & 0xFFFFFFFFFFFFFF80L) == 0)
             {
-                writeByte(value, os);
+                writeByte((int) (value & 0xFF), os);
 
                 return;
             }
 
-            writeByte(value & 0x7F | 0x80, os);
+            writeByte((int) (value & 0x7F) | 0x80, os);
             // Note: >>> means that the sign bit is shifted with the rest of the number
             // rather than being
             // left alone
@@ -716,6 +869,13 @@ public final class Utils
         }
     }
 
+    /**
+     * Calculates the encoded length of a variable length integer
+     *
+     * @param value The value to check
+     *
+     * @return The length of the value encoded as a variable length integer in bytes
+     */
     public static int varIntLen(int value)
     {
         int len = 0;
@@ -736,6 +896,13 @@ public final class Utils
         }
     }
 
+    /**
+     * Calculates the encoded length of a variable length long
+     *
+     * @param value The value to check
+     *
+     * @return The length of the value encoded as a variable length long in bytes
+     */
     public static int varLongLen(long value)
     {
         int len = 0;
