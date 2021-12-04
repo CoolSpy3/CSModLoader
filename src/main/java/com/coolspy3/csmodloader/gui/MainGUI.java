@@ -58,7 +58,7 @@ class MainGUI extends JPanel implements ActionListener
 
         table.setDefaultRenderer(JButton.class, new ComponentTableCellRenderer());
 
-        new TableButtonListener(table);
+        table.addMouseListener(new TableButtonListener(table));
 
         updateTable();
     }

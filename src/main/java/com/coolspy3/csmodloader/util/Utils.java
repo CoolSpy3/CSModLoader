@@ -2,6 +2,7 @@ package com.coolspy3.csmodloader.util;
 
 import java.awt.Frame;
 import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
 import java.io.ByteArrayOutputStream;
 import java.io.EOFException;
 import java.io.IOException;
@@ -29,12 +30,28 @@ import com.coolspy3.csmodloader.interfaces.ExceptionSupplier;
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
 
+/**
+ * Utility functions
+ */
 public final class Utils
 {
 
+    /**
+     * A reference to {@link StandardCharsets#UTF_8}
+     */
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
+    /**
+     * A runnable which has no functionality ({@code () -> {}})
+     */
     public static final Runnable DO_NOTHING = () -> {};
 
+    /**
+     * Boxes the given byte array
+     *
+     * @param arr The array to box
+     *
+     * @return The boxed array
+     */
     public static Byte[] box(byte[] arr)
     {
         Byte[] out = new Byte[arr.length];
@@ -45,13 +62,22 @@ public final class Utils
         return out;
     }
 
+    /**
+     * Creates a Frame and waits for the user to close it
+     *
+     * @param createFunc A function which will be invoked to create the frame.
+     *
+     * @throws InterruptedException if any thread interrupted the current thread before or while the
+     *         current thread was waiting for a notification. The interrupted status of the current
+     *         thread is cleared when this exception is thrown.
+     */
     public static void createAndWaitFor(Supplier<Frame> createFunc) throws InterruptedException
     {
         Object lock = new Object();
 
         SwingUtilities.invokeLater(() -> createFunc.get().addWindowListener(new WindowAdapter()
         {
-            public void windowClosing(java.awt.event.WindowEvent e)
+            public void windowClosing(WindowEvent e)
             {
                 synchronized (lock)
                 {
@@ -66,6 +92,22 @@ public final class Utils
         }
     }
 
+    /**
+     * Executes the supplied function synchronously until it completes or a set duration passes,
+     * after which, it switches to asynchronous execution.
+     *
+     * @param func The function to run
+     * @param timeout The max amount of time to wait before switching to asynchronous execution in
+     *        milliseconds
+     * @param taskName A format string which can be used to construct the name of the task being
+     *        executed (for logging purposes)
+     * @param args Arguments which will be passed to the {@link String#format(String, Object...)}
+     *        function when formatting the {@code taskName}
+     *
+     * @throws InterruptedException if any thread interrupted the current thread before or while the
+     *         current thread was waiting for a notification. The interrupted status of the current
+     *         thread is cleared when this exception is thrown.
+     */
     public static void executeTimeoutSync(Runnable func, long timeout, String taskName,
             Object... args) throws InterruptedException
     {
@@ -78,6 +120,27 @@ public final class Utils
         }, timeout, taskName, null, taskName, args);
     }
 
+    /**
+     * Executes the supplied function synchronously until it completes or a set duration passes,
+     * after which, it switches to asynchronous execution.
+     *
+     * @param <T> The return type of the function
+     * @param func The function to run
+     * @param timeout The max amount of time to wait before switching to asynchronous execution in
+     *        milliseconds
+     * @param defaultValue The value to return if the function times out while executing
+     * @param taskName A format string which can be used to construct the name of the task being
+     *        executed (for logging purposes)
+     * @param args Arguments which will be passed to the {@link String#format(String, Object...)}
+     *        function when formatting the {@code taskName}
+     *
+     * @return The result of the function or {@code defaultValue} if it switched to asynchronous
+     *         execution
+     *
+     * @throws InterruptedException if any thread interrupted the current thread before or while the
+     *         current thread was waiting for a notification. The interrupted status of the current
+     *         thread is cleared when this exception is thrown.
+     */
     @SuppressWarnings("unchecked")
     public static <T> T executeTimeoutSync(Supplier<T> func, long timeout, T defaultValue,
             String taskName, Object... args) throws InterruptedException
@@ -115,17 +178,43 @@ public final class Utils
         return (T) arr[0];
     }
 
+    /**
+     * Deserializes an object from a byte array
+     *
+     * @param <T> The object type to deserialize
+     * @param bytes The byte array
+     * @param convFunc A function which parses the object from a ByteBuffer
+     *
+     * @return The parsed object
+     */
     public static <T> T fromBytes(byte[] bytes, Function<ByteBuffer, T> convFunc)
     {
         return convFunc.apply(ByteBuffer.wrap(bytes));
     }
 
-    public static <T> byte[] getBytes(T num, int length,
+    /**
+     * Serializes an object to a byte array
+     *
+     * @param <T> The object type to serialize
+     * @param t The object
+     * @param length The serialized length of the object
+     * @param convFunc A function which serializes the object to the given ByteBuffer
+     *
+     * @return The serialized object as a byte array
+     */
+    public static <T> byte[] getBytes(T t, int length,
             BiFunction<ByteBuffer, T, ByteBuffer> convFunc)
     {
-        return convFunc.apply(ByteBuffer.allocate(length), num).array();
+        return convFunc.apply(ByteBuffer.allocate(length), t).array();
     }
 
+    /**
+     * Retrieves the full stack trace of an exception as a string
+     *
+     * @param e The exception from which to retrieve the stack trace
+     *
+     * @return The stack trace
+     */
     public static String getStackTrace(Exception e)
     {
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
@@ -134,6 +223,18 @@ public final class Utils
         return new String(bais.toByteArray(), UTF_8);
     }
 
+    /**
+     * Sends a HTTP POST request to the specified URL
+     *
+     * @param url The URL to which to send the request
+     * @param payload The payload of the request. This will be converted to a string using
+     *        {@link Gson#toJson(Object)}
+     *
+     * @return An Object array containing the response code from the server and the string
+     *         representation of any additional data received from the server
+     *
+     * @throws IOException if an I/O error occurs
+     */
     public static Object[] post(String url, Object payload) throws IOException
     {
         HttpURLConnection conn = (HttpURLConnection) new URL(url).openConnection();
@@ -165,6 +266,11 @@ public final class Utils
         }
     }
 
+    /**
+     * Prints the hex representation of the specified byte array to {@link System#out}
+     *
+     * @param arr The array to print
+     */
     public static void printHex(byte[] arr)
     {
         StringBuilder str = new StringBuilder("[");
@@ -178,6 +284,13 @@ public final class Utils
         System.out.println(str.append("]"));
     }
 
+    /**
+     * Generates a random alpha-numeric String
+     *
+     * @param length The length of the resulting String
+     *
+     * @return The random String
+     */
     // Credit: https://www.baeldung.com/java-random-string
     public static String randomString(int length)
     {
@@ -194,6 +307,11 @@ public final class Utils
         return generatedString;
     }
 
+    /**
+     * Executes the provided function and logs if an error occurs
+     *
+     * @param func The function to execute
+     */
     public static void reporting(ExceptionRunnable func)
     {
         try
@@ -206,21 +324,54 @@ public final class Utils
         }
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #reporting(ExceptionSupplier)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func)
     {
         return t -> Utils.reporting(() -> func.apply(t));
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #reporting(ExceptionSupplier, Object)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func, U defaultValue)
     {
         return t -> Utils.reporting(() -> func.apply(t), defaultValue);
     }
 
+    /**
+     * Executes the provided function and logs if an exception occurs
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     *
+     * @return The value returned by the function or {@code null} if an exception ocurred
+     */
     public static <T> T reporting(ExceptionSupplier<T> func)
     {
         return reporting(func, null);
     }
 
+    /**
+     * Executes the provided function and logs if an exception occurs
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     * @param defaultValue The value to return in case of an exception
+     *
+     * @return The value returned by the function or {@code defaultValue} if an exception ocurred
+     */
     public static <T> T reporting(ExceptionSupplier<T> func, T defaultValue)
     {
         try
@@ -235,6 +386,11 @@ public final class Utils
         }
     }
 
+    /**
+     * Executes a function, ignoring any exceptions
+     *
+     * @param func The function to execute
+     */
     public static void safe(ExceptionRunnable func)
     {
         try
@@ -245,21 +401,54 @@ public final class Utils
         {}
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #safe(ExceptionSupplier)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func)
     {
         return t -> Utils.safe(() -> func.apply(t));
     }
 
+    /**
+     * Creates a function which wraps all calls to the provided function in
+     * {@link #safe(ExceptionSupplier, Object)}
+     *
+     * @param func The function to wrap
+     *
+     * @return The new function
+     */
     public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func, U defaultValue)
     {
         return t -> Utils.safe(() -> func.apply(t), defaultValue);
     }
 
+    /**
+     * Executes a function, ignoring any exceptions
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     *
+     * @return The value returned by the function or {@code null} if an exception ocurred
+     */
     public static <T> T safe(ExceptionSupplier<T> func)
     {
         return safe(func, null);
     }
 
+    /**
+     * Executes a function, ignoring any exceptions
+     *
+     * @param <T> The return type of the function
+     * @param func The function to execute
+     * @param defaultValue The value to return in case of an exception
+     *
+     * @return The value returned by the function or {@code defaultValue} if an exception ocurred
+     */
     public static <T> T safe(ExceptionSupplier<T> func, T defaultValue)
     {
         try
@@ -272,17 +461,50 @@ public final class Utils
         }
     }
 
+    /**
+     * A convenience function for wrapping {@link #createAndWaitFor(Supplier)} in a call to
+     * {@link #safe(ExceptionRunnable)}
+     *
+     * @param createFunc The function to use to create the window
+     */
     public static void safeCreateAndWaitFor(Supplier<Frame> createFunc)
     {
         safe(() -> createAndWaitFor(createFunc));
     }
 
+    /**
+     * A convenience function for wrapping
+     * {@link #executeTimeoutSync(Runnable, long, String, Object...)} in a call to
+     * {@link #safe(ExceptionRunnable)}
+     *
+     * @param func The function to run
+     * @param timeout The max amount of time to wait before switching to asynchronous execution in
+     *        milliseconds
+     * @param taskName A format string which can be used to construct the name of the task being
+     *        executed (for logging purposes)
+     * @param args Arguments which will be passed to the {@link String#format(String, Object...)}
+     *        function when formatting the {@code taskName}
+     */
     public static void safeExecuteTimeoutSync(Runnable func, long timeout, String taskName,
             Object... args)
     {
         safe(() -> executeTimeoutSync(func, timeout, taskName, args));
     }
 
+    /**
+     * A convenience function for wrapping
+     * {@link #executeTimeoutSync(Supplier, long, Object, String, Object...)} in a call to
+     * {@link #safe(ExceptionRunnable)}
+     *
+     * @param func The function to run
+     * @param timeout The max amount of time to wait before switching to asynchronous execution in
+     *        milliseconds
+     * @param defaultValue The value to return if the function times out while executing
+     * @param taskName A format string which can be used to construct the name of the task being
+     *        executed (for logging purposes)
+     * @param args Arguments which will be passed to the {@link String#format(String, Object...)}
+     *        function when formatting the {@code taskName}
+     */
     public static <T> T safeExecuteTimeoutSync(Supplier<T> func, long timeout, T defaultValue,
             String taskName, Object... args)
     {
