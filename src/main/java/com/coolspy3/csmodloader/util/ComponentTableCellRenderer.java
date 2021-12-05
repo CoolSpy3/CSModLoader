@@ -5,6 +5,9 @@ import java.awt.Component;
 import javax.swing.JTable;
 import javax.swing.table.DefaultTableCellRenderer;
 
+/**
+ * Renders {@link Component}s {@link JTable} cells rather than stringifying them
+ */
 public class ComponentTableCellRenderer extends DefaultTableCellRenderer
 {
 

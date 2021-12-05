@@ -11,6 +11,9 @@ import javax.swing.JTextField;
 
 import com.coolspy3.csmodloader.Config;
 
+/**
+ * A JPanel used to allow a user to edit the name and ip of a {@link Server}
+ */
 class ServerEditGUI extends JPanel implements ActionListener
 {
 
@@ -20,6 +23,9 @@ class ServerEditGUI extends JPanel implements ActionListener
     private final JTextField serverName, serverIp;
     private final JButton saveButton, cancelButton;
 
+    /**
+     * @param serverId The id of the server to edit
+     */
     ServerEditGUI(String serverId)
     {
         setLayout(new GridLayout(3, 2));

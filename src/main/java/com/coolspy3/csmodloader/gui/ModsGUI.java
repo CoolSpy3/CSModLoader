@@ -16,6 +16,9 @@ import com.coolspy3.csmodloader.mod.Mod;
 import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.util.UneditableTableModel;
 
+/**
+ * A JPanel used to display a list of the mods which are currently loaded
+ */
 class ModsGUI extends JPanel implements ActionListener
 {
 

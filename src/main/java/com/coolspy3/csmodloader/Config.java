@@ -8,51 +8,76 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.util.HashMap;
 
-import javax.swing.SwingUtilities;
-
 import com.coolspy3.csmodloader.gui.Server;
-import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.ShiftableList;
+import com.coolspy3.csmodloader.util.Utils;
 
 import com.google.gson.Gson;
 
+/**
+ * Manages user-specific configuration settings
+ */
 public class Config
 {
 
+    /**
+     * Initializes this Config and determines the location of the loader's configuration file
+     */
     static void init()
     {
         cfgFile = GameArgs.get().gameDir.toPath().resolve("csmodloader.cfg.json").toFile();
     }
 
+    /**
+     * A list of server ids in the order in which they should be displayed to the user
+     *
+     * @see Server#id
+     */
     public ShiftableList<String> serverList = new ShiftableList<>();
+    /**
+     * A mapping of server ids to their corresponding Server objects
+     *
+     * @see Server#id
+     */
     public HashMap<String, Server> servers = new HashMap<>();
 
+    /**
+     * A convenience method for invoking {@code Utils.reporting(Config::save)}
+     */
     public static void safeSave()
     {
-        try
-        {
-            save();
-        }
-        catch (IOException e)
-        {
-            e.printStackTrace(System.err);
-
-            SwingUtilities.invokeLater(
-                    () -> new TextAreaFrame("Error occured while saving configuration!", e));
-        }
+        Utils.reporting(Config::save);
     }
 
     // Base Config Code
 
+    /**
+     * The configuration file
+     */
     private static File cfgFile = null;
+    /**
+     * The global configuration instance
+     */
     private static Config INSTANCE = new Config();
+    /**
+     * A static Gson instance to use for jsonifying data
+     */
     private static final Gson gson = new Gson();
 
+    /**
+     * @return The global configuration instance
+     */
     public static Config getInstance()
     {
         return INSTANCE;
     }
 
+    /**
+     * Loads the configuration file into the global configuration instance
+     *
+     * @throws IOException If an I/O error occurs
+     * @throws IllegalStateException If {@link #init()} has not been invoked
+     */
     public static void load() throws IOException, IllegalStateException
     {
         if (cfgFile == null) throw new IllegalStateException("Config has not been initialized");
@@ -73,6 +98,12 @@ public class Config
         }
     }
 
+    /**
+     * Saves the global configuration instance into the configuration file
+     *
+     * @throws IOException If an I/O error occurs
+     * @throws IllegalStateException If {@link #init()} has not been invoked
+     */
     public static void save() throws IOException, IllegalStateException
     {
         if (cfgFile == null) throw new IllegalStateException("Config has not been initialized");

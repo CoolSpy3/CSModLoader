@@ -6,6 +6,11 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
 
+import com.coolspy3.csmodloader.util.Utils;
+
+/**
+ * Represents a JFrame with a changeable JPanel content to be used as the primary GUI of the program
+ */
 public class MainWindow extends JFrame
 {
 
@@ -28,6 +33,11 @@ public class MainWindow extends JFrame
         setVisible(true);
     }
 
+    /**
+     * Updates the content displayed in this frame
+     *
+     * @param newContent The new content to display
+     */
     void setContent(JPanel newContent)
     {
         if (content != null) remove(content);
@@ -36,19 +46,35 @@ public class MainWindow extends JFrame
         revalidate();
     }
 
+    /**
+     * @return The global instance of the window used by the program
+     */
     static MainWindow get()
     {
         return window;
     }
 
+    /**
+     * Updates the content displayed on the global instance of the window. This is equivalent to
+     * invoking {@code get().setContent(newContent)}
+     *
+     * @param newContent The new content to display
+     */
     static void updateContent(JPanel newContent)
     {
         get().setContent(newContent);
     }
 
-    public static void create()
+    /**
+     * Creates and initializes a new frame and sets it as the global frame using
+     * {@link SwingUtilities#invokeAndWait(Runnable)}.
+     *
+     * This method has no effect if the global window has already been set.
+     */
+    public static synchronized void create()
     {
-        if (window == null) SwingUtilities.invokeLater(() -> window = new MainWindow());
+        if (window == null)
+            Utils.safe(() -> SwingUtilities.invokeAndWait(() -> window = new MainWindow()));
     }
 
 }

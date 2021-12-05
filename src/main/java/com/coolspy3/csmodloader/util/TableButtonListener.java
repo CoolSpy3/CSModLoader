@@ -4,9 +4,12 @@ import java.awt.event.MouseAdapter;
 import java.awt.event.MouseEvent;
 
 import javax.swing.AbstractButton;
-import javax.swing.JButton;
 import javax.swing.JTable;
 
+/**
+ * A MouseListener which passes on mouse button clicks to {@link AbstractButton}s in a
+ * {@link JTable}.
+ */
 public class TableButtonListener extends MouseAdapter
 {
 
@@ -15,7 +18,6 @@ public class TableButtonListener extends MouseAdapter
     public TableButtonListener(JTable table)
     {
         this.table = table;
-        table.addMouseListener(this);
     }
 
     @Override
@@ -26,7 +28,7 @@ public class TableButtonListener extends MouseAdapter
         if (row < table.getRowCount() && row >= 0 && column < table.getColumnCount() && column >= 0)
         {
             Object value = table.getValueAt(row, column);
-            if (value instanceof JButton)
+            if (value instanceof AbstractButton)
             {
                 ((AbstractButton) value).doClick();
             }
