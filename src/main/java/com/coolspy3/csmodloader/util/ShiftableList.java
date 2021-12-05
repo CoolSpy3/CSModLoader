@@ -58,7 +58,8 @@ public class ShiftableList<T> extends ArrayList<T>
      *
      * @param idx The element to shift
      *
-     * @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index >= size())
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         {@code (index < 0 || index >= size())}
      */
     public void shiftUp(int idx) throws IndexOutOfBoundsException
     {
@@ -89,7 +90,8 @@ public class ShiftableList<T> extends ArrayList<T>
      *
      * @param idx The element to shift
      *
-     * @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index >= size())
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         {@code (index < 0 || index >= size())}
      */
     public void shiftDown(int idx) throws IndexOutOfBoundsException
     {
@@ -106,7 +108,8 @@ public class ShiftableList<T> extends ArrayList<T>
      *
      * @param idx The index to check
      *
-     * @throws IndexOutOfBoundsException if the index is out of range (index < 0 || index >= size())
+     * @throws IndexOutOfBoundsException if the index is out of range
+     *         {@code (index < 0 || index >= size())}
      */
     public void rangeCheck(int idx) throws IndexOutOfBoundsException
     {

@@ -7,7 +7,7 @@ import java.util.function.Function;
  * Represents an implementation of {@link Function} which handles an I/O operation
  *
  * @param <T> the type of the input to the function
- * @param <R> the type of the result of the function
+ * @param <U> the type of the result of the function
  */
 public interface IOFunction<T, U>
 {
@@ -20,6 +20,6 @@ public interface IOFunction<T, U>
      *
      * @throws IOException if an I/O exception occurs.
      */
-    public U run(T u) throws IOException;
+    public U run(T t) throws IOException;
 
 }

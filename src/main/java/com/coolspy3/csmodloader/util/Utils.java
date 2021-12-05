@@ -328,6 +328,8 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #reporting(ExceptionSupplier)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
      *
      * @return The new function
@@ -341,7 +343,10 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #reporting(ExceptionSupplier, Object)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
+     * @param defaultValue The value to return in case of an exception
      *
      * @return The new function
      */
@@ -405,6 +410,8 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #safe(ExceptionSupplier)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
      *
      * @return The new function
@@ -418,7 +425,10 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #safe(ExceptionSupplier, Object)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
+     * @param defaultValue The value to return in case of an exception
      *
      * @return The new function
      */
@@ -496,6 +506,7 @@ public final class Utils
      * {@link #executeTimeoutSync(Supplier, long, Object, String, Object...)} in a call to
      * {@link #safe(ExceptionRunnable)}
      *
+     * @param <T> The return type of the function
      * @param func The function to run
      * @param timeout The max amount of time to wait before switching to asynchronous execution in
      *        milliseconds
@@ -504,6 +515,9 @@ public final class Utils
      *        executed (for logging purposes)
      * @param args Arguments which will be passed to the {@link String#format(String, Object...)}
      *        function when formatting the {@code taskName}
+     * 
+     * @return The result of the function or {@code defaultValue} if it switched to asynchronous
+     *         execution
      */
     public static <T> T safeExecuteTimeoutSync(Supplier<T> func, long timeout, T defaultValue,
             String taskName, Object... args)
@@ -539,6 +553,8 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #noFail(ExceptionSupplier)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
      *
      * @return The new function
@@ -705,6 +721,8 @@ public final class Utils
      * Creates a function which wraps all calls to the provided function in
      * {@link #wrap(ExceptionSupplier)}
      *
+     * @param <T> The input type of the function
+     * @param <U> The return type of the function
      * @param func The function to wrap
      *
      * @return The new function
@@ -820,7 +838,8 @@ public final class Utils
     /**
      * Writes a variable length integer to an OutputStream
      *
-     * @param is The OutputStream to which to write
+     * @param os The OutputStream to which to write
+     * @param value The value to write
      *
      * @throws IOException If an I/O error occurs
      */
@@ -846,7 +865,8 @@ public final class Utils
     /**
      * Writes a variable length long to an OutputStream
      *
-     * @param is The OutputStream to which to write
+     * @param os The OutputStream to which to write
+     * @param value The value to write
      *
      * @throws IOException If an I/O error occurs
      */

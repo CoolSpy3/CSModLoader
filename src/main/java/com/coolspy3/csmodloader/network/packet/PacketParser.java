@@ -555,7 +555,7 @@ public final class PacketParser
      * Registers the ids to use to send and receive the specified packet
      *
      * @param direction The direction in which the packet will be transmitted
-     * @param packetType The packet class type to register
+     * @param packetClass The packet class type to register
      * @param packetId The packet id to use when sending or receiving the packet
      * @param additionalIds Additional ids which may be used to receive the packet
      *

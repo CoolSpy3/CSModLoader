@@ -43,7 +43,7 @@ public class UneditableTableModel extends DefaultTableModel
      * @see #setDataVector
      * @see #setValueAt
      */
-    public UneditableTableModel(Vector columnNames, int rowCount)
+    public UneditableTableModel(Vector<?> columnNames, int rowCount)
     {
         super(columnNames, rowCount);
     }
@@ -74,7 +74,7 @@ public class UneditableTableModel extends DefaultTableModel
      * @see #getDataVector
      * @see #setDataVector
      */
-    public UneditableTableModel(Vector data, Vector columnNames)
+    public UneditableTableModel(Vector<? extends Vector> data, Vector<?> columnNames)
     {
         super(data, columnNames);
     }

@@ -171,7 +171,8 @@ public class SemanticVersionRange
      * version is excluded and a square bracket that it is included in the resulting range.
      *
      * @param range The string to check
-     * @return
+     *
+     * @return Whether {@code range} is a valid SemanticVersionRange
      *
      * @see SemanticVersion#validate(String)
      */

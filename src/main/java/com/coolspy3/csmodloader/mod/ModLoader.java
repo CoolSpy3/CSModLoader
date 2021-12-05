@@ -70,9 +70,9 @@ public final class ModLoader
      * If any of the above conditions are not met, this function will report the error to the error
      * log and the user and return {@code null}.
      *
-     * All classes should be available at the time their <clinit> blocks are called, however, mods
-     * should attempt to execute code in their constructors which are guaranteed to be called such
-     * that mods' dependencies' constructors will be invoked first.
+     * All classes should be available at the time their &lt;clinit&gt; blocks are called, however,
+     * mods should attempt to execute code in their constructors which are guaranteed to be called
+     * such that mods' dependencies' constructors will be invoked first.
      *
      * When mods are initialized during the server connection phase, their {@code create} and
      * {@code init} methods are guaranteed to be called in the same order as their constructors.
@@ -469,9 +469,9 @@ public final class ModLoader
      * @param tempDir The directory in which to extract the found libraries
      * @return A list containing all of the extracted jars
      *
-     * @throws IOException
+     * @throws IOException If an I/O error occurs
      *
-     * @see {@link File#deleteOnExit()}
+     * @see File#deleteOnExit()
      */
     public static ArrayList<File> recursivelyLoadLibraries(List<File> files, Path tempDir)
             throws IOException
