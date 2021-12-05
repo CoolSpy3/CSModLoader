@@ -336,16 +336,20 @@ public class ConnectionHandler implements Runnable
         if (compressionThreshhold == -1)
         {
             packetData = Utils.readNBytes(is, length);
-            is.reset();
-            is.mark(length);
 
-            int packetId = Utils.readVarInt(is);
-
-            if (packetId == 0x00)
+            if (state != State.PLAY)
             {
-                switch (state)
+                is.reset();
+                is.mark(length);
+
+                int packetId = Utils.readVarInt(is);
+
+                switch (packetId)
                 {
-                    case HANDSHAKE:
+                    case 0x00:
+                    {
+                        if (state != State.HANDSHAKE) break;
+
                         blockPacket = true;
 
                         int version = Utils.readVarInt(is);
@@ -357,7 +361,7 @@ public class ConnectionHandler implements Runnable
                         switch (nextState)
                         {
                             case 2:
-                                state = State.PLAY;
+                                state = State.LOGIN;
                                 break;
 
                             case 1:
@@ -376,101 +380,144 @@ public class ConnectionHandler implements Runnable
                         Utils.writeVarInt(nextState, baos);
 
                         safeWrite(baos);
-                        break;
 
-                    case PLAY:
-                    case STATUS:
+                        break;
+                    }
+
+                    case 0x01:
+                    {
+                        if (state != State.LOGIN) break;
+
+                        switch (direction)
+                        {
+                            case CLIENTBOUND:
+                            {
+                                blockPacket = true;
+
+                                String serverId = Utils.readString(is);
+                                byte[] publicKeyEncoded = Utils.readBytes(is);
+                                byte[] verifyToken = Utils.readBytes(is);
+
+                                PublicKey publicKey = Utils.noFail(() -> keyFactory
+                                        .generatePublic(new X509EncodedKeySpec(publicKeyEncoded)));
+                                setupEncryption(serverId, publicKey);
+                                other.setupEncryption(serverId, publicKey);
+
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                baos.write(0x01);
+                                Utils.writeString("", baos);
+                                Utils.writeBytes(serverKey.getPublic().getEncoded(), baos);
+                                Utils.writeBytes(verifyToken, baos);
+
+                                safeWrite(baos);
+
+                                ConnectionHandler handler = this;
+
+                                // Wait until the client enables encryption so that the next call to
+                                // is.read()
+                                // will be decrypted
+                                command = () -> Utils.safe(() -> {
+                                    synchronized (handler)
+                                    {
+                                        handler.wait();
+                                    }
+                                });
+
+                                break;
+                            }
+
+                            case SERVERBOUND:
+                            {
+                                blockPacket = true;
+
+                                Cipher cipher = Utils.noFail(() -> Cipher
+                                        .getInstance(serverKey.getPrivate().getAlgorithm()));
+
+                                Utils.noFail(() -> cipher.init(2, serverKey.getPrivate()));
+                                byte[] sharedSecretEncrypted = Utils.readBytes(is);
+                                byte[] sharedSecret =
+                                        Utils.noFail(() -> cipher.doFinal(sharedSecretEncrypted));
+
+                                Utils.noFail(() -> cipher.init(2, serverKey.getPrivate()));
+                                byte[] verifyTokenEncrypted = Utils.readBytes(is);
+                                byte[] verifyToken =
+                                        Utils.noFail(() -> cipher.doFinal(verifyTokenEncrypted));
+
+                                try
+                                {
+                                    McUtils.joinServerYggdrasil(accessToken,
+                                            GameArgs.get().uuid.toString(), serverId,
+                                            serverPublicKey, sharedSecret);
+                                }
+                                catch (IOException e)
+                                {
+                                    Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(
+                                            "Could not authenticate you with Mojang's servers! (Try restarting the program)",
+                                            e));
+                                }
+
+                                other.enableEncryption(new SecretKeySpec(
+                                        Arrays.copyOf(sharedSecret, sharedSecret.length), "AES"));
+                                Cipher recipher = Utils.noFail(
+                                        () -> Cipher.getInstance(serverPublicKey.getAlgorithm()));
+
+                                ByteArrayOutputStream baos = new ByteArrayOutputStream();
+                                baos.write(0x01);
+                                Utils.noFail(() -> recipher.init(1, serverPublicKey));
+                                Utils.writeBytes(
+                                        Utils.noFail(() -> recipher.doFinal(
+                                                Arrays.copyOf(sharedSecret, sharedSecret.length))),
+                                        baos);
+                                Utils.noFail(() -> recipher.init(1, serverPublicKey));
+                                Utils.writeBytes(Utils.noFail(() -> recipher.doFinal(verifyToken)),
+                                        baos);
+
+                                safeWrite(baos);
+
+                                // Send Encryption Response and then enable encryption fo both
+                                // listeners
+                                command = () -> {
+                                    enableEncryption(new SecretKeySpec(
+                                            Arrays.copyOf(sharedSecret, sharedSecret.length),
+                                            "AES"));
+                                    synchronized (other)
+                                    {
+                                        other.notifyAll();
+                                    }
+                                };
+
+                                break;
+                            }
+
+                            default:
+                                break;
+                        }
+
+                        break;
+                    }
+
+                    case 0x02:
+                    {
+                        state = State.PLAY;
+                        other.setState(State.PLAY);
+
+                        break;
+                    }
+
+                    case 0x03:
+                    {
+                        int compressionThreshhold = Utils.readVarInt(is);
+                        other.setCompression(compressionThreshhold);
+
+                        command = () -> {
+                            setCompression(compressionThreshhold);
+                        };
+
+                        break;
+                    }
+
                     default:
                         break;
-                }
-            }
-            else if (packetId == 0x01)
-            {
-                if (direction == PacketDirection.CLIENTBOUND)
-                {
-                    blockPacket = true;
-
-                    String serverId = Utils.readString(is);
-                    byte[] publicKeyEncoded = Utils.readBytes(is);
-                    byte[] verifyToken = Utils.readBytes(is);
-
-                    PublicKey publicKey = Utils.noFail(() -> keyFactory
-                            .generatePublic(new X509EncodedKeySpec(publicKeyEncoded)));
-                    setupEncryption(serverId, publicKey);
-                    other.setupEncryption(serverId, publicKey);
-
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    baos.write(0x01);
-                    Utils.writeString("", baos);
-                    Utils.writeBytes(serverKey.getPublic().getEncoded(), baos);
-                    Utils.writeBytes(verifyToken, baos);
-
-                    safeWrite(baos);
-
-                    ConnectionHandler handler = this;
-
-                    // Wait until the client enables encryption so that the next call to is.read()
-                    // will be decrypted
-                    command = () -> Utils.safe(() -> {
-                        synchronized (handler)
-                        {
-                            handler.wait();
-                        }
-                    });
-                }
-                else if (direction == PacketDirection.SERVERBOUND)
-                {
-                    blockPacket = true;
-
-                    Cipher cipher = Utils.noFail(
-                            () -> Cipher.getInstance(serverKey.getPrivate().getAlgorithm()));
-
-                    Utils.noFail(() -> cipher.init(2, serverKey.getPrivate()));
-                    byte[] sharedSecretEncrypted = Utils.readBytes(is);
-                    byte[] sharedSecret = Utils.noFail(() -> cipher.doFinal(sharedSecretEncrypted));
-
-                    Utils.noFail(() -> cipher.init(2, serverKey.getPrivate()));
-                    byte[] verifyTokenEncrypted = Utils.readBytes(is);
-                    byte[] verifyToken = Utils.noFail(() -> cipher.doFinal(verifyTokenEncrypted));
-
-                    try
-                    {
-                        McUtils.joinServerYggdrasil(accessToken, GameArgs.get().uuid.toString(),
-                                serverId, serverPublicKey, sharedSecret);
-                    }
-                    catch (IOException e)
-                    {
-                        Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(
-                                "Could not authenticate you with Mojang's servers! (Try restarting the program)",
-                                e));
-                    }
-
-                    other.enableEncryption(new SecretKeySpec(
-                            Arrays.copyOf(sharedSecret, sharedSecret.length), "AES"));
-                    Cipher recipher =
-                            Utils.noFail(() -> Cipher.getInstance(serverPublicKey.getAlgorithm()));
-
-                    ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                    baos.write(0x01);
-                    Utils.noFail(() -> recipher.init(1, serverPublicKey));
-                    Utils.writeBytes(
-                            Utils.noFail(() -> recipher
-                                    .doFinal(Arrays.copyOf(sharedSecret, sharedSecret.length))),
-                            baos);
-                    Utils.noFail(() -> recipher.init(1, serverPublicKey));
-                    Utils.writeBytes(Utils.noFail(() -> recipher.doFinal(verifyToken)), baos);
-
-                    safeWrite(baos);
-
-                    // Send Encryption Response and then enable encryption fo both listeners
-                    command = () -> {
-                        enableEncryption(new SecretKeySpec(
-                                Arrays.copyOf(sharedSecret, sharedSecret.length), "AES"));
-                        synchronized (other)
-                        {
-                            other.notifyAll();
-                        }
-                    };
                 }
             }
         }
@@ -492,25 +539,10 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        {
-            ByteArrayInputStream bufferedPacketStream = new ByteArrayInputStream(packetData);
-            int packetId = Utils.readVarInt(bufferedPacketStream);
-
-            if (packetId == 0x03 || packetId == 0x46)
-            {
-                int compressionThreshhold = Utils.readVarInt(is);
-                other.setCompression(compressionThreshhold);
-
-                command = () -> {
-                    setCompression(compressionThreshhold);
-                };
-            }
-            else if (key != null && command == Utils.DO_NOTHING) Utils.safeExecuteTimeoutSync(
-                    () -> Utils
-                            .reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
-                    500, "PacketHandler.handlePacket(%s)",
-                    Utils.readVarInt(new ByteArrayInputStream(packetData)));
-        }
+        if (state == State.PLAY) Utils.safeExecuteTimeoutSync(
+                () -> Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
+                500, "PacketHandler.handlePacket(%s)",
+                Utils.readVarInt(new ByteArrayInputStream(packetData)));
 
         is.reset();
 
@@ -676,7 +708,7 @@ public class ConnectionHandler implements Runnable
 
     public static enum State
     {
-        HANDSHAKE, STATUS, PLAY;
+        HANDSHAKE, STATUS, LOGIN, PLAY;
     }
 
 }
