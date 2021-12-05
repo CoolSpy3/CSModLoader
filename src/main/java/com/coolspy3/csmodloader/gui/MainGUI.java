@@ -8,6 +8,7 @@ import java.util.Objects;
 import java.util.stream.IntStream;
 
 import javax.swing.JButton;
+import javax.swing.JComponent;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JTable;
@@ -21,6 +22,9 @@ import com.coolspy3.csmodloader.util.TableButtonListener;
 import com.coolspy3.csmodloader.util.UneditableTableModel;
 import com.coolspy3.csmodloader.util.Utils;
 
+/**
+ * A JPanel used to display the primary GUI containing the server selection list
+ */
 class MainGUI extends JPanel implements ActionListener
 {
 
@@ -54,16 +58,21 @@ class MainGUI extends JPanel implements ActionListener
 
         table.setDefaultRenderer(JButton.class, new ComponentTableCellRenderer());
 
-        new TableButtonListener(table);
+        table.addMouseListener(new TableButtonListener(table));
 
         updateTable();
     }
 
-    public void updateTable()
+    /**
+     * Updates this GUI to reflect the current server list and {@link ServerInstance} status
+     */
+    public synchronized void updateTable()
     {
+        // Clear the table
         while (tableModel.getRowCount() > 0)
             tableModel.removeRow(0);
 
+        // Add all servers
         Config.getInstance().serverList.stream().map(Config.getInstance().servers::get)
                 .filter(Objects::nonNull)
                 .map(server -> new Object[] {server.name, server.ip,
@@ -74,12 +83,14 @@ class MainGUI extends JPanel implements ActionListener
                         serverButton("v", ButtonAction.MVDWN, server.id)})
                 .forEach(tableModel::addRow);
 
+        // Disable move buttons on endpoints (can't move top server up or bottom server down)
         if (tableModel.getRowCount() > 0)
         {
             ((JButton) tableModel.getValueAt(0, 5)).setEnabled(false);
             ((JButton) tableModel.getValueAt(tableModel.getRowCount() - 1, 6)).setEnabled(false);
         }
 
+        // If the ServerInstance is running. No server data can be modified
         addServerButton.setEnabled(!ServerInstance.isRunning());
 
         if (ServerInstance.isRunning())
@@ -185,6 +196,19 @@ class MainGUI extends JPanel implements ActionListener
         updateTable();
     }
 
+    /**
+     * Creates a new JButton, assigns it the required properties to reference a particular server
+     * entry, and adds this GUI as an ActionListener
+     *
+     * @param text The text to display on the button
+     * @param action The action to associate with the button. This will be set as the "action"
+     *        property
+     * @param serverId The serverId to associate with the button. This will be set as the "serverId"
+     *        property
+     * @return The resulting JButton
+     *
+     * @see JComponent#putClientProperty
+     */
     private final JButton serverButton(String text, ButtonAction action, String serverId)
     {
         JButton button = new JButton(text);
@@ -199,7 +223,26 @@ class MainGUI extends JPanel implements ActionListener
 
     private static enum ButtonAction
     {
-        CONNECT, EDIT, DELETE, MVUP, MVDWN;
+        /**
+         * Instructs the {@link ServerInstance} to connect or disconnect from the associated server
+         */
+        CONNECT,
+        /**
+         * Opens a {@link ServerEditGUI} to allow the user to edit the associated server
+         */
+        EDIT,
+        /**
+         * Deletes the associated server
+         */
+        DELETE,
+        /**
+         * Shifts the associated server up in the display
+         */
+        MVUP,
+        /**
+         * Shifts the associated server down in the display
+         */
+        MVDWN;
     }
 
 }

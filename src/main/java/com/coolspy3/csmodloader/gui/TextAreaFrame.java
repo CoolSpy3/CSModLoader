@@ -8,12 +8,17 @@ import javax.swing.JTextArea;
 
 import com.coolspy3.csmodloader.util.Utils;
 
-
+/**
+ * A simple frame which displays a message and optional exception to the user
+ */
 public class TextAreaFrame extends JFrame
 {
 
     private static final long serialVersionUID = 3425495168432306211L;
 
+    /**
+     * @param message The message to display in the frame
+     */
     public TextAreaFrame(String message)
     {
         super("CoolSpy3 Mod Loader");
@@ -33,14 +38,25 @@ public class TextAreaFrame extends JFrame
         setVisible(true);
     }
 
+    /**
+     * A convenience method for including the stacktrace of an exception in the message.
+     *
+     * @param message The message to display in the frame
+     * @param e The exception of which to include the stacktraces
+     */
     public TextAreaFrame(String message, Exception e)
     {
         this(message + "\n\n" + Utils.getStackTrace(e));
     }
 
+    /**
+     * A convenience method for including the stacktrace of an exception in the message.
+     *
+     * @param e The exception of which to include the stacktraces
+     */
     public TextAreaFrame(Exception e)
     {
-        this("An unknown error occured!", e);
+        this("An unknown error occurred!", e);
     }
 
 }

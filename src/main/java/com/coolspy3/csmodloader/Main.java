@@ -19,12 +19,29 @@ import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
+/**
+ * The main class
+ */
 @Mod(id = "csmodloader", name = "CSModLoader", version = "1.0.0", description = "The mod loader")
 public class Main
 {
 
+    private static boolean init = false;
+
+    /**
+     * The entrypoint to the program
+     *
+     * @param args The command-line arguments
+     */
     public static void main(String[] args)
     {
+        synchronized (Main.class)
+        {
+            if (init) return;
+
+            init = true;
+        }
+
         String accessToken = null;
         String gameDir = null;
         String username = null;

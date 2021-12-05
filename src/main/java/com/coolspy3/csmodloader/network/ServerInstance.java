@@ -9,24 +9,61 @@ import java.util.ArrayList;
 import javax.swing.SwingUtilities;
 
 import com.coolspy3.csmodloader.Config;
+import com.coolspy3.csmodloader.gui.Server;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
 
+/**
+ * Establishes the "virtual" Minecraft server
+ */
 public class ServerInstance
 {
 
+    /**
+     * The player's access token
+     */
     private static String accessToken;
+    /**
+     * The KeyPair to use during initial authentication
+     */
     private static KeyPair rsaKey;
 
+    /**
+     * The current running instance
+     */
     private static ServerInstance instance;
 
+    /**
+     * The id of the server to connect to
+     *
+     * @see Server#id
+     */
     private String serverId;
+    /**
+     * The hostname of the server to which to connect
+     */
     private String host;
+    /**
+     * The port of the server to which to connect
+     */
     private int port;
 
+    /**
+     * The ServerSocket accepting connections to the server
+     */
     private ServerSocket server;
+    /**
+     * The connections currently connected to the server
+     */
     private ArrayList<Connection> connections;
 
+    /**
+     * Creates a new ServerInstance
+     *
+     * @param serverId The id of the server to which to connect
+     * @param ip The ip address of the server including an optional port number in the form
+     *        "<ip>:<port>"
+     */
     private ServerInstance(String serverId, String ip)
     {
         this.serverId = serverId;
@@ -41,6 +78,12 @@ public class ServerInstance
         connections = new ArrayList<>();
     }
 
+    /**
+     * Creates a new ServerSocket on the port 25565 and begins accepting connections to this
+     * instance
+     *
+     * @throws IOException If an I/O error occurs
+     */
     private void startInNewThread() throws IOException
     {
         server = new ServerSocket(25565);
@@ -71,6 +114,9 @@ public class ServerInstance
         thread.start();
     }
 
+    /**
+     * Terminates this ServerInstance by closing the ServerSocket and all open connections
+     */
     private void shutdown()
     {
         Utils.safe(server::close);
@@ -79,7 +125,14 @@ public class ServerInstance
         instance = null;
     }
 
-    public static void init(String accessToken, KeyPair rsaKey)
+    /**
+     * Initializes global values for {@link #accessToken} and {@link #rsaKey} so that they do not
+     * have to be specified when starting a new ServerInstance
+     *
+     * @param accessToken The player's access token
+     * @param rsaKey The KeyPair to use during initial authentication
+     */
+    public static synchronized void init(String accessToken, KeyPair rsaKey)
     {
         if (ServerInstance.accessToken != null) return;
 
@@ -87,17 +140,35 @@ public class ServerInstance
         ServerInstance.rsaKey = rsaKey;
     }
 
+    /**
+     * @return Whether a server instance is currently running
+     */
     public static boolean isRunning()
     {
         return instance != null;
     }
 
+    /**
+     * @return The current id of the running ServerInstance or {@code null} if none is running
+     *
+     * @see Server#id
+     */
     public static String getRunningServerId()
     {
         return isRunning() ? instance.serverId : null;
     }
 
-    public static boolean start(String id)
+    /**
+     * Starts a new ServerInstance for the given server. If a ServerInstance is already running,
+     * this has no effect.
+     *
+     * @param id The id of the server to start
+     *
+     * @return Whether the ServerInstance was started successfully
+     *
+     * @see Server#id
+     */
+    public static synchronized boolean start(String id)
     {
         if (instance != null) return false;
 
@@ -118,7 +189,11 @@ public class ServerInstance
         return true;
     }
 
-    public static void stop()
+    /**
+     * If a ServerInstance is currently running, this method calls its {@link #shutdown()} method.
+     * Otherwise, this method has no effect.
+     */
+    public static synchronized void stop()
     {
         if (instance != null) instance.shutdown();
     }
