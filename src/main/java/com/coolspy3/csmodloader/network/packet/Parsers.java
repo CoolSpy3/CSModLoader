@@ -9,11 +9,16 @@ import java.util.stream.Stream;
 
 import com.coolspy3.csmodloader.util.Utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Contains default ObjectParsers for common types
  */
 public final class Parsers
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Parsers.class);
 
     /**
      * @return The ObjectParsers defined by this class
@@ -60,6 +65,7 @@ public final class Parsers
      */
     public static void registerDefaults()
     {
+        logger.debug("Registering default ObjectParsers!");
         Stream.of(defaults()).forEach(PacketParser::addParser);
     }
 

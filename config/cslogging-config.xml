@@ -1,0 +1,15 @@
+<configuration debug="true" scan="true">
+
+    <timestamp key="currentTime" datePattern="yyyy-MM-dd-HH-mm-ss-SSS" />
+
+    <appender name="logFileAppender" class="ch.qos.logback.core.FileAppender">
+        <file>cslogs/${currentTime}.log.txt</file>
+        <encoder>
+            <pattern>%d{HH:mm:ss.SSS} [%thread] %-5level %logger - %msg%n</pattern>
+        </encoder>
+    </appender>
+
+    <root level="info">
+        <appender-ref ref="logFileAppender" />
+    </root>
+</configuration>

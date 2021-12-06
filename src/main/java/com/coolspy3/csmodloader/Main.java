@@ -19,12 +19,19 @@ import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * The main class
  */
 @Mod(id = "csmodloader", name = "CSModLoader", version = "1.0.0", description = "The mod loader")
 public class Main
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Main.class);
 
     private static boolean init = false;
 
@@ -41,6 +48,12 @@ public class Main
 
             init = true;
         }
+
+        StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
+
+        logger.info("Program Started!");
+
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.info("Program Exiting...")));
 
         String accessToken = null;
         String gameDir = null;
@@ -59,26 +72,33 @@ public class Main
                 {
                     case "--accesstoken":
                         accessToken = argIttr.next();
-                        continue;
+                        logger.info("Read Argument \"Access Token\": {}",
+                                accessToken.replaceAll(".", "*"));
+                        break;
 
                     case "--gamedir":
                         gameDir = argIttr.next();
-                        continue;
+                        logger.info("Read Argument \"Game Directory\": {}", gameDir);
+                        break;
 
                     case "--username":
                         username = argIttr.next();
-                        continue;
+                        logger.info("Read Argument \"Username\": {}", username);
+                        break;
 
                     case "--uuid":
                         String uuidString = argIttr.next();
+
+                        logger.info("Read Argument \"UUID\": {}", uuidString);
 
                         uuid = UUID.fromString(uuidString.substring(0, 8) + "-"
                                 + uuidString.substring(8, 12) + "-" + uuidString.substring(12, 16)
                                 + "-" + uuidString.substring(16, 20) + "-"
                                 + uuidString.substring(20));
-                        continue;
+                        break;
 
                     default:
+                        logger.warn("Unknown Argument: {}", arg);
                         break;
                 }
             }
@@ -93,7 +113,7 @@ public class Main
         }
         catch (IOException e)
         {
-            e.printStackTrace();
+            logger.error("Failed to load config file!", e);
 
             Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Failed to load config file", e));
 
@@ -109,11 +129,15 @@ public class Main
 
         ServerInstance.init(accessToken, rsaKey);
 
+        logger.debug("Initialization Complete!");
+
         ArrayList<Entrypoint> mods = ModLoader.loadMods();
 
         if (mods == null) return;
 
         PacketHandler.setMods(mods);
+
+        logger.debug("Starting GUI...");
 
         MainWindow.create();
     }
