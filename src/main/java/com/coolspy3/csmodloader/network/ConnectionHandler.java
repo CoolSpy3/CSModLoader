@@ -373,12 +373,12 @@ public class ConnectionHandler implements Runnable
                         switch (nextState)
                         {
                             case 2:
-                                state = State.LOGIN;
+                                setState(State.LOGIN);
                                 break;
 
                             case 1:
                             default:
-                                state = State.STATUS;
+                                setState(State.STATUS);
                                 break;
                         }
 
@@ -551,6 +551,16 @@ public class ConnectionHandler implements Runnable
                 decompressor.inflate(packetData);
 
                 decompressor.reset();
+            }
+
+            if (state == State.LOGIN
+                    && Utils.readVarInt(new ByteArrayInputStream(packetData)) == 0x02)
+            {
+                setPacketHandler(new PacketHandler());
+                other.setPacketHandler(packetHandler);
+
+                command = () -> setState(State.PLAY);
+                other.setState(State.PLAY);
             }
         }
 

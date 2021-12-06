@@ -145,7 +145,7 @@ public class PacketHandler
             if (method.getDeclaringClass() != cls)
             {
                 logger.trace("Method is not declared in provided class!");
-                return;
+                continue;
             }
 
             int mod = method.getModifiers();
@@ -154,13 +154,13 @@ public class PacketHandler
             if (!Modifier.isPublic(mod) || (o instanceof Class != Modifier.isStatic(mod)))
             {
                 logger.trace("Method modifiers are invalid!");
-                return;
+                continue;
             }
 
             if (subscribers.stream().anyMatch(sub -> sub.matches(method)))
             {
                 logger.trace("Subscriber already exists!");
-                return;
+                continue;
             }
 
             Class<? extends Packet>[] validTypes = validateMethod(method);
@@ -168,7 +168,7 @@ public class PacketHandler
             if (validTypes == null)
             {
                 logger.trace("No packet types can be accepted by this function!");
-                return;
+                continue;
             }
             else if (logger.isTraceEnabled())
             {
