@@ -13,12 +13,16 @@ import com.coolspy3.csmodloader.util.ShiftableList;
 import com.coolspy3.csmodloader.util.Utils;
 
 import com.google.gson.Gson;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Manages user-specific configuration settings
  */
 public class Config
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Config.class);
 
     /**
      * Initializes this Config and determines the location of the loader's configuration file
@@ -82,6 +86,8 @@ public class Config
     {
         if (cfgFile == null) throw new IllegalStateException("Config has not been initialized");
 
+        logger.debug("Loading Config...");
+
         if (!cfgFile.exists()) return;
 
         try (BufferedReader reader = new BufferedReader(new FileReader(cfgFile)))
@@ -107,6 +113,8 @@ public class Config
     public static void save() throws IOException, IllegalStateException
     {
         if (cfgFile == null) throw new IllegalStateException("Config has not been initialized");
+
+        logger.debug("Saving Config...");
 
         cfgFile.createNewFile();
         try (BufferedWriter writer = new BufferedWriter(new FileWriter(cfgFile)))

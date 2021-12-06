@@ -9,11 +9,16 @@ import java.util.function.Function;
 import com.coolspy3.csmodloader.network.PacketDirection;
 import com.coolspy3.csmodloader.util.WrapperException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Encodes and decodes packets from the packet stream
  */
 public final class PacketParser
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(PacketParser.class);
 
     /**
      * A mapping of packet classes to their associated PacketSpecs
@@ -83,6 +88,7 @@ public final class PacketParser
     public static <T extends Packet> void addSpecification(Class<T> packetType,
             Function<Object[], T> constructor) throws IllegalArgumentException
     {
+        logger.trace("Adding specification for Packet: {}", packetType);
         PacketSpec spec = packetType.getAnnotation(PacketSpec.class);
 
         if (spec == null) throw new IllegalArgumentException(
@@ -105,6 +111,7 @@ public final class PacketParser
     public static <T extends Packet> void addSpecification(Class<T> packetType, PacketSpec spec,
             Function<Object[], T> constructor)
     {
+        logger.trace("Adding specification for Packet: {}", packetType);
         specifications.put(packetType, spec);
         constructors.put(packetType, constructor);
     }
@@ -116,6 +123,7 @@ public final class PacketParser
      */
     public static void addParser(ObjectParser<?> parser)
     {
+        logger.trace("Adding parser for Object type: {}", parser.getType());
         objectParsers.put(parser.getType(), parser);
     }
 
@@ -127,6 +135,7 @@ public final class PacketParser
      */
     public static void addSerializer(PacketSerializer<?> serializer)
     {
+        logger.trace("Adding serializer for Packet: {}", serializer.getType());
         customSerializers.put(serializer.getType(), serializer);
     }
 
@@ -543,6 +552,7 @@ public final class PacketParser
     public static void registerPacketClass(Class<? extends Packet> packetType, int packetId,
             int... additionalIds) throws IllegalArgumentException
     {
+        logger.trace("Registering Packet class: {} ({})", packetType, packetId);
         PacketSpec spec = packetType.getAnnotation(PacketSpec.class);
 
         if (spec == null) throw new IllegalArgumentException(
@@ -564,6 +574,7 @@ public final class PacketParser
     public static void registerPacketClass(PacketDirection direction,
             Class<? extends Packet> packetClass, int packetId, int... additionalIds)
     {
+        logger.trace("Registering Packet class: {} ({})", packetClass, packetId);
         switch (direction)
         {
             case CLIENTBOUND:

@@ -33,12 +33,17 @@ import com.coolspy3.csmodloader.interfaces.IOConsumer;
 import com.coolspy3.csmodloader.util.McUtils;
 import com.coolspy3.csmodloader.util.Utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Manages the connection between a Minecraft client and server. An instance of this class handles
  * only one direction of traffic.
  */
 public class ConnectionHandler implements Runnable
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(ConnectionHandler.class);
 
     private static final KeyFactory keyFactory = Utils.noFail(() -> KeyFactory.getInstance("RSA"));
 
@@ -132,6 +137,7 @@ public class ConnectionHandler implements Runnable
      */
     private void setState(State state)
     {
+        logger.debug("Switching state to {}...", state);
         this.state = state;
     }
 
@@ -142,6 +148,7 @@ public class ConnectionHandler implements Runnable
      */
     public void setCompression(int threshold)
     {
+        logger.trace("Setting compression threshold to {}...", threshold);
         this.compressionThreshhold = threshold;
     }
 
@@ -153,6 +160,7 @@ public class ConnectionHandler implements Runnable
      */
     public void setupEncryption(String serverId, PublicKey key)
     {
+        logger.trace("Setting up encryption...");
         this.serverId = serverId;
         this.serverPublicKey = key;
     }
@@ -164,6 +172,7 @@ public class ConnectionHandler implements Runnable
      */
     public void enableEncryption(SecretKey secretKey)
     {
+        logger.trace("Enabling encryption...");
         this.key = secretKey;
 
         encCipher = Utils.noFail(() -> Cipher.getInstance("AES/CFB8/NoPadding"));
@@ -179,6 +188,7 @@ public class ConnectionHandler implements Runnable
     /**
      * Blocks the packet which is being processed from being forwarded to the output stream
      */
+    @Deprecated
     void blockPacket()
     {
         blockPacket = true;
@@ -210,7 +220,7 @@ public class ConnectionHandler implements Runnable
 
     /**
      * Sets the PacketHandler which will be used to process packets for this ConnectionHandler. This
-     * should be called before this handler's read loop is started.
+     * should be called by this handler's read loop.
      *
      * @param packetHandler The PacketHandler which will be used to process packets for this
      *        ConnectionHandler
@@ -218,6 +228,7 @@ public class ConnectionHandler implements Runnable
     private void setPacketHandler(PacketHandler packetHandler)
     {
         this.packetHandler = packetHandler;
+        packetHandler.linkToCurrentThread();
     }
 
     /**
@@ -263,7 +274,8 @@ public class ConnectionHandler implements Runnable
     public void run()
     {
         localHandler.set(this);
-        packetHandler.linkToCurrentThread();
+
+        logger.debug("{} ConnectionHandler started!", direction);
 
         try
         {
@@ -307,7 +319,7 @@ public class ConnectionHandler implements Runnable
         }
         catch (Exception e)
         {
-            e.printStackTrace(System.err);
+            logger.error("Error Processing Connection!", e);
 
             Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(direction.toString(), e));
         }
@@ -498,7 +510,10 @@ public class ConnectionHandler implements Runnable
 
                     case 0x02:
                     {
-                        state = State.PLAY;
+                        setPacketHandler(new PacketHandler());
+                        other.setPacketHandler(packetHandler);
+
+                        command = () -> setState(State.PLAY);
                         other.setState(State.PLAY);
 
                         break;
@@ -677,6 +692,8 @@ public class ConnectionHandler implements Runnable
     static Connection start(Socket client, Socket server, String host, String accessToken,
             KeyPair key) throws IOException
     {
+        logger.info("Starting ConnectionHandler to server: {}", host);
+
         ConnectionHandler c2s = new ConnectionHandler(client, server, host, accessToken,
                 PacketDirection.SERVERBOUND, key);
         ConnectionHandler s2c = new ConnectionHandler(server, client, host, accessToken,
@@ -684,10 +701,6 @@ public class ConnectionHandler implements Runnable
 
         c2s.setOther(s2c);
         s2c.setOther(c2s);
-
-        PacketHandler packetHandler = new PacketHandler();
-        c2s.setPacketHandler(packetHandler);
-        s2c.setPacketHandler(packetHandler);
 
         s2c.startInNewThread();
         c2s.startInNewThread();

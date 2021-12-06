@@ -29,12 +29,16 @@ import com.coolspy3.csmodloader.interfaces.ExceptionSupplier;
 
 import com.google.gson.Gson;
 import org.apache.commons.io.IOUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * Utility functions
  */
 public final class Utils
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(Utils.class);
 
     /**
      * A reference to {@link StandardCharsets#UTF_8}
@@ -173,7 +177,7 @@ public final class Utils
         }
 
         if (isRunning.get())
-            System.err.println("Timed out while executing task: " + String.format(taskName, args));
+            logger.warn("Timed out while executing task: " + String.format(taskName, args));
 
         return (T) arr[0];
     }
@@ -224,6 +228,24 @@ public final class Utils
     }
 
     /**
+     * Converts the specified byte array int hex
+     *
+     * @param arr The array to convert
+     */
+    public static String hexString(byte[] arr)
+    {
+        StringBuilder str = new StringBuilder("[");
+
+        for (int i = 0; i < arr.length; i++)
+        {
+            str.append(String.format("%02x", arr[i]));
+            if (i < arr.length - 1) str.append(", ");
+        }
+
+        return str.append("]").toString();
+    }
+
+    /**
      * Sends a HTTP POST request to the specified URL
      *
      * @param url The URL to which to send the request
@@ -266,24 +288,6 @@ public final class Utils
         }
     }
 
-    /**
-     * Prints the hex representation of the specified byte array to {@link System#out}
-     *
-     * @param arr The array to print
-     */
-    public static void printHex(byte[] arr)
-    {
-        StringBuilder str = new StringBuilder("[");
-
-        for (int i = 0; i < arr.length; i++)
-        {
-            str.append(String.format("%02x", arr[i]));
-            if (i < arr.length - 1) str.append(", ");
-        }
-
-        System.out.println(str.append("]"));
-    }
-
     // Credit: https://www.baeldung.com/java-random-string
     /**
      * Generates a random alpha-numeric String
@@ -320,7 +324,7 @@ public final class Utils
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            logger.warn("Utils.reporting", e);
         }
     }
 
@@ -385,7 +389,7 @@ public final class Utils
         }
         catch (Exception e)
         {
-            e.printStackTrace();
+            logger.warn("Utils.reporting", e);
 
             return defaultValue;
         }
@@ -544,7 +548,7 @@ public final class Utils
                     "If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(",
                     e));
 
-            e.printStackTrace(System.err);
+            logger.error("Utils.noFail", e);
             System.exit(1);
         }
     }
@@ -586,7 +590,7 @@ public final class Utils
                     "If you're seeing this, you've got a problem: This error shouldn't be able to occur :/\nMost likely your system is incompatible with this program :(",
                     e));
 
-            e.printStackTrace(System.err);
+            logger.error("Utils.noFail", e);
             System.exit(1);
 
             return null;
@@ -796,7 +800,6 @@ public final class Utils
             if (bitOffset == 35) throw new IOException("VarInt is too big");
 
             currentByte = readByte(is);
-            // System.out.println(String.format("%02x", currentByte));
             value |= (currentByte & 0b01111111) << bitOffset;
 
             bitOffset += 7;

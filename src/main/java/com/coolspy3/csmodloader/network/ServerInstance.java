@@ -13,11 +13,16 @@ import com.coolspy3.csmodloader.gui.Server;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Establishes the "virtual" Minecraft server
  */
 public class ServerInstance
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(ServerInstance.class);
 
     /**
      * The player's access token
@@ -86,6 +91,7 @@ public class ServerInstance
      */
     private void startInNewThread() throws IOException
     {
+        logger.info("Starting Server ({}): {}:{}", serverId, host, port);
         server = new ServerSocket(25565);
         Thread thread = new Thread(() -> {
             while (!server.isClosed())
@@ -103,7 +109,7 @@ public class ServerInstance
                 {
                     if (server.isClosed()) break;
 
-                    e.printStackTrace(System.err);
+                    logger.warn("Error Connecting to Client!", e);
 
                     SwingUtilities.invokeLater(() -> new TextAreaFrame(e));
                 }
@@ -119,6 +125,7 @@ public class ServerInstance
      */
     private void shutdown()
     {
+        logger.info("Shutting Down Server ({}): {}:{}", serverId, host, port);
         Utils.safe(server::close);
         connections.forEach(Connection::close);
 
@@ -179,7 +186,7 @@ public class ServerInstance
         }
         catch (Exception e)
         {
-            e.printStackTrace(System.err);
+            logger.warn("Error Starting Server!", e);
 
             SwingUtilities.invokeLater(() -> new TextAreaFrame("Error starting server!", e));
 

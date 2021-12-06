@@ -19,11 +19,17 @@ import com.coolspy3.csmodloader.network.packet.Packet;
 import com.coolspy3.csmodloader.network.packet.PacketParser;
 import com.coolspy3.csmodloader.util.Utils;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Manages the parsing and dispatching of packets
  */
 public class PacketHandler
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(PacketHandler.class);
+
     private static final InheritableThreadLocal<PacketHandler> localHandler =
             new InheritableThreadLocal<>();
 
@@ -46,6 +52,8 @@ public class PacketHandler
      */
     PacketHandler()
     {
+        logger.debug("Initializing PacketHandler...");
+
         loadedMods = new ArrayList<>(mods);
         loadedMods.replaceAll(Entrypoint::create);
 
@@ -125,36 +133,68 @@ public class PacketHandler
      */
     public void register(Object o)
     {
+        logger.debug("Registering: {}", o);
+
         Class<?> cls = o instanceof Class ? (Class<?>) o : o.getClass();
 
         for (Method method : cls.getMethods())
         {
 
-            if (method.getDeclaringClass() != cls) return;
+            logger.trace("Considering method: {}", method);
+
+            if (method.getDeclaringClass() != cls)
+            {
+                logger.trace("Method is not declared in provided class!");
+                return;
+            }
 
             int mod = method.getModifiers();
 
             // Iff o is Class, method must be static
-            if (!Modifier.isPublic(mod) || (o instanceof Class != Modifier.isStatic(mod))) return;
+            if (!Modifier.isPublic(mod) || (o instanceof Class != Modifier.isStatic(mod)))
+            {
+                logger.trace("Method modifiers are invalid!");
+                return;
+            }
 
-            if (subscribers.stream().anyMatch(sub -> sub.matches(method))) continue;
+            if (subscribers.stream().anyMatch(sub -> sub.matches(method)))
+            {
+                logger.trace("Subscriber already exists!");
+                return;
+            }
 
             Class<? extends Packet>[] validTypes = validateMethod(method);
 
-            if (validTypes == null) continue;
+            if (validTypes == null)
+            {
+                logger.trace("No packet types can be accepted by this function!");
+                return;
+            }
+            else if (logger.isTraceEnabled())
+            {
+                logger.trace("Valid types: ", Arrays.toString(validTypes));
+            }
 
             Class<?> returnType = method.getReturnType();
 
             if (returnType == Boolean.class || returnType == Boolean.TYPE)
+            {
+                logger.trace("Adding as boolean function");
+
                 subscribers.add(new SubscriberFunction(method,
                         packet -> (Boolean) method.invoke(o, packet), validTypes));
+            }
 
             else
+            {
+                logger.trace("Adding as consumer");
+
                 subscribers.add(new SubscriberFunction(method, packet -> {
 
                     method.invoke(o, packet);
 
                 }, validTypes));
+            }
         }
     }
 
@@ -174,12 +214,17 @@ public class PacketHandler
     public final <T extends Packet> void register(ExceptionConsumer<T> func,
             Class<? extends T>... validTypes) throws NullPointerException
     {
+        logger.trace("Registering consumer...");
         if (subscribers.stream().noneMatch(sub -> sub.matches(func)))
             subscribers.add(new SubscriberFunction(func, packet -> {
 
                 func.accept((T) packet);
 
             }, validTypes));
+
+        else
+            logger.trace("Consumer has already been registered! Aborting...");
+
     }
 
     /**
@@ -201,12 +246,16 @@ public class PacketHandler
     public final <T extends Packet> void register(ExceptionFunction<T, Boolean> func,
             Class<? extends T>... validTypes) throws NullPointerException
     {
+        logger.trace("Registering function...");
         if (subscribers.stream().noneMatch(sub -> sub.matches(func)))
             subscribers.add(new SubscriberFunction(func, packet -> {
 
                 return func.apply((T) packet);
 
             }, validTypes));
+
+        else
+            logger.trace("Function has already been registered! Aborting...");
     }
 
     /**

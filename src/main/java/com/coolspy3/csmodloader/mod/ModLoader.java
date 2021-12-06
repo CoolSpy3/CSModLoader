@@ -33,11 +33,16 @@ import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
 import com.coolspy3.csmodloader.util.WrapperException;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * Handles the loading and validation of mods
  */
 public final class ModLoader
 {
+
+    private static final Logger logger = LoggerFactory.getLogger(ModLoader.class);
 
     public static final String[] BASIC_MOD_INFO = new String[] {"Mod Id", "Version"};
     public static final Function<Mod, String[]> MOD_INFO_MAP_FUNCTION =
@@ -92,6 +97,8 @@ public final class ModLoader
             modsLoaded = true;
         }
 
+        logger.info("Loading Mods...");
+
         HashMap<Mod, Class<?>> mods = new HashMap<>();
 
         // Get all jar files
@@ -123,7 +130,7 @@ public final class ModLoader
             }
             catch (IOException | ModLoadingException e)
             {
-                e.printStackTrace(System.err);
+                logger.error("Error loading mod file!", e);
 
                 Utils.safeCreateAndWaitFor(() -> new TextAreaFrame("Error loading mod file!", e));
 
@@ -139,10 +146,9 @@ public final class ModLoader
 
             if (!nonEntrypointMods.isEmpty())
             {
-                System.err.println("The following mods do not implement Entrypoint:\n"
-                        + nonEntrypointMods.stream().map(MOD_INFO_MAP_FUNCTION)
-                                .map(info -> info[0] + ":" + info[1])
-                                .collect(Collectors.joining("\n")));
+                logger.error("The following mods do not implement Entrypoint:\n" + nonEntrypointMods
+                        .stream().map(MOD_INFO_MAP_FUNCTION).map(info -> info[0] + ":" + info[1])
+                        .collect(Collectors.joining("\n")));
 
                 Utils.safeCreateAndWaitFor(
                         () -> new ListFrame("One or more mods do not implement Entrypoint!",
@@ -160,7 +166,7 @@ public final class ModLoader
 
             if (!invalidMods.isEmpty())
             {
-                System.err.println("The following mods are invalid:\n" + invalidMods.stream()
+                logger.error("The following mods are invalid:\n" + invalidMods.stream()
                         .map(MOD_INFO_MAP_FUNCTION).map(info -> info[0] + ":" + info[1])
                         .collect(Collectors.joining("\n")));
 
@@ -183,7 +189,7 @@ public final class ModLoader
                     mods.keySet().stream().filter(mod -> overlappingModIds.contains(mod.id()))
                             .collect(Collectors.toList());
 
-            System.err.println("The following mods have the same id:\n" + overlappingMods.stream()
+            logger.error("The following mods have the same id:\n" + overlappingMods.stream()
                     .map(MOD_INFO_MAP_FUNCTION).map(info -> info[0] + ":" + info[1])
                     .collect(Collectors.joining("\n")));
 
@@ -221,10 +227,8 @@ public final class ModLoader
                             }
                             catch (Exception e)
                             {
-                                System.err.println(
-                                        "Error loading mod: " + mod.id() + ":" + mod.version());
-
-                                e.printStackTrace(System.err);
+                                logger.error("Error loading mod: " + mod.id() + ":" + mod.version(),
+                                        e);
 
                                 Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(
                                         "Error loading mod: " + mod.id() + ":" + mod.version(), e));
@@ -252,7 +256,7 @@ public final class ModLoader
                     unloadedMods.stream().collect(Collectors.toMap(Function.identity(),
                             mod -> getMissingDependenciesValidated(mod, loadedMods)));
 
-            System.err.println("Missing Dependencies:\n" + missingDependencies.entrySet().stream()
+            logger.error("Missing Dependencies:\n" + missingDependencies.entrySet().stream()
                     .map(entry -> entry.getKey().id() + ":" + entry.getKey().version() + ":\n"
                             + entry.getValue().stream().collect(Collectors.joining("\n")))
                     .collect(Collectors.joining("\n\n")));
@@ -268,6 +272,8 @@ public final class ModLoader
 
             return null;
         }
+
+        logger.info("{} Mods loaded!", mods.size());
 
         modList = new ArrayList<>(mods.keySet());
         modList.add(loaderMod);
@@ -342,14 +348,14 @@ public final class ModLoader
     {
         if (!mod.id().matches("[a-zA-Z0-9_\\-]+"))
         {
-            System.err.println("Invalid Mod Id: " + mod.id());
+            logger.error("Invalid Mod Id: " + mod.id());
 
             return false;
         }
 
         if (!SemanticVersion.validate(mod.version()))
         {
-            System.err.println("Invalid Version: " + mod.version());
+            logger.error("Invalid Version: " + mod.version());
 
             return false;
         }
@@ -364,7 +370,7 @@ public final class ModLoader
         if (!Stream.of(mod.dependencies()).map(dependency -> {
             if (!dependency.matches("[a-zA-Z0-9_\\-]+(?::[0-9,\\Q.()[]\\E]+)?"))
             {
-                System.err.println("Invalid Dependency Specification: " + dependency);
+                logger.error("Invalid Dependency Specification: " + dependency);
 
                 return false;
             }
@@ -400,6 +406,10 @@ public final class ModLoader
     public static Class<?>[] loadJars(Path tempDir, File... modFiles)
             throws IOException, ModLoadingException
     {
+        logger.info("Attempting to load {} jar files...", modFiles.length);
+
+        logger.debug("Temp directory is: {}", tempDir);
+
         // Wrap in ArrayList to allow adding of new elements
         ArrayList<File> files = new ArrayList<>(Arrays.asList(modFiles));
 
@@ -418,6 +428,7 @@ public final class ModLoader
             for (File file : files)
                 try (JarFile jar = new JarFile(file))
                 {
+                    logger.trace("Loading {}...", file);
                     for (JarEntry entry : Collections.list(jar.entries()))
                     {
                         String name = entry.getName();
@@ -486,6 +497,7 @@ public final class ModLoader
                 for (JarEntry entry : Collections.list(jar.entries()))
                     if (entry.getName().matches("\\QMETA-INF/libraries/\\E[^\\/]*\\.jar"))
                     {
+                        logger.trace("Extracting Library: {}/!{}", file, entry);
                         File newFile = Files.createTempFile(tempDir, null, null).toFile();
                         newFile.deleteOnExit();
                         try (FileOutputStream os = new FileOutputStream(newFile))
