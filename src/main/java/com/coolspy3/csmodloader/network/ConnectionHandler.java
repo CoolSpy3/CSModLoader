@@ -349,12 +349,13 @@ public class ConnectionHandler implements Runnable
         {
             packetData = Utils.readNBytes(is, length);
 
+            is.reset();
+            is.mark(length);
+
+            int packetId = Utils.readVarInt(is);
+
             if (state != State.PLAY)
             {
-                is.reset();
-                is.mark(length);
-
-                int packetId = Utils.readVarInt(is);
 
                 switch (packetId)
                 {
@@ -519,21 +520,19 @@ public class ConnectionHandler implements Runnable
                         break;
                     }
 
-                    case 0x03:
-                    {
-                        int compressionThreshhold = Utils.readVarInt(is);
-                        other.setCompression(compressionThreshhold);
-
-                        command = () -> {
-                            setCompression(compressionThreshhold);
-                        };
-
-                        break;
-                    }
-
                     default:
                         break;
                 }
+            }
+
+            if (packetId == 0x03)
+            {
+                int compressionThreshhold = Utils.readVarInt(is);
+                other.setCompression(compressionThreshhold);
+
+                command = () -> {
+                    setCompression(compressionThreshhold);
+                };
             }
         }
         else
