@@ -53,6 +53,8 @@ public class Main
 
         logger.info("Program Started!");
 
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.info("Program Exiting...")));
+
         String accessToken = null;
         String gameDir = null;
         String username = null;
