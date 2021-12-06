@@ -251,7 +251,7 @@ public class PacketHandler
                 Arrays.stream(subscribeAnnotation.acceptedPacketTypes())
                         .filter(packetType::isAssignableFrom).toArray(Class[]::new);
 
-        return validTypes;
+        return validTypes.length == 0 ? new Class[] {packetType} : validTypes;
     }
 
     /**
