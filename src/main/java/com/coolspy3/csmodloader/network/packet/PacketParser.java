@@ -552,7 +552,6 @@ public final class PacketParser
     public static void registerPacketClass(Class<? extends Packet> packetType, int packetId,
             int... additionalIds) throws IllegalArgumentException
     {
-        logger.trace("Registering Packet class: {} ({})", packetType, packetId);
         PacketSpec spec = packetType.getAnnotation(PacketSpec.class);
 
         if (spec == null) throw new IllegalArgumentException(
