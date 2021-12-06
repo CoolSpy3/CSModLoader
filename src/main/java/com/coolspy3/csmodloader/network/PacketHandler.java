@@ -172,7 +172,7 @@ public class PacketHandler
             }
             else if (logger.isTraceEnabled())
             {
-                logger.trace("Valid types: ", Arrays.toString(validTypes));
+                logger.trace("Valid types: {}", Arrays.toString(validTypes));
             }
 
             Class<?> returnType = method.getReturnType();
