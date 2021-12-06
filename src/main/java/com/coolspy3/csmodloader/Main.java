@@ -19,6 +19,8 @@ import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,6 +48,8 @@ public class Main
 
             init = true;
         }
+
+        StatusPrinter.print((LoggerContext) LoggerFactory.getILoggerFactory());
 
         logger.info("Program Started!");
 

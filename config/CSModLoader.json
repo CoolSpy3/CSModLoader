@@ -18,7 +18,7 @@
     "jvm": [
       "-cp",
       "${classpath}",
-      "-Dlogback.configurationFile=logging-config.xml"
+      "-Dlogback.configurationFile=${game_directory}/cslogging-config.xml"
     ]
   }
 }
