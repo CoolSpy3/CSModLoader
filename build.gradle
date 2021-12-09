@@ -1,6 +1,7 @@
 plugins {
     id 'java'
     id 'application'
+    id 'maven-publish'
 }
 
 group = 'com.coolspy3'
@@ -44,5 +45,27 @@ javadoc {
     }
     if (JavaVersion.current() >= JavaVersion.VERSION_1_9) {
         options.addStringOption("-release", "8")
+    }
+}
+
+publishing {
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri "https://maven.pkg.github.com/coolspy3/CSModLoader"
+            credentials {
+                username = project.findProperty("gpr.user") ?: System.getenv("GITHUB_ACTOR")
+                password = project.findProperty("gpr.key") ?: System.getenv("GITHUB_TOKEN")
+            }
+        }
+    }
+    publications {
+        gpr(MavenPublication) {
+            groupId = 'com.coolspy3'
+            artifactId = 'csmodloader'
+            version = '1.0.1'
+
+            from components.java
+        }
     }
 }
