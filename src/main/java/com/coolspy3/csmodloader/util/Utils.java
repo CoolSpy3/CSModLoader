@@ -231,6 +231,8 @@ public final class Utils
      * Converts the specified byte array int hex
      *
      * @param arr The array to convert
+     *
+     * @return The hex string
      */
     public static String hexString(byte[] arr)
     {
