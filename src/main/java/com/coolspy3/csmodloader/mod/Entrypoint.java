@@ -33,4 +33,11 @@ public interface Entrypoint
     public default void init(PacketHandler handler)
     {}
 
+    /**
+     * Called to indicate that the connection being handled by this Entrypoint instance is being
+     * shutdown. This will only be called once for each time the instance is loaded.
+     */
+    public default void shutdown()
+    {}
+
 }

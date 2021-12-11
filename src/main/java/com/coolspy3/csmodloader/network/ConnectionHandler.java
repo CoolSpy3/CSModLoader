@@ -327,6 +327,7 @@ public class ConnectionHandler implements Runnable
         {
             Utils.safe(iSocket::close);
             Utils.safe(oSocket::close);
+            if (packetHandler != null) packetHandler.shutdown();
         }
     }
 
