@@ -46,6 +46,11 @@ public class PacketHandler
     private final ArrayList<SubscriberFunction> subscribers = new ArrayList<>();
 
     /**
+     * Whether {@link #shutdown()} has been called;
+     */
+    private boolean isShutdown = false;
+
+    /**
      * Creates a new PacketHandler and initializes all mods by calling
      * {@link Entrypoint#init(PacketHandler)} on all instances returned by
      * {@link Entrypoint#create()}.
@@ -117,6 +122,14 @@ public class PacketHandler
         ByteArrayInputStream bais = new ByteArrayInputStream(packetData);
 
         return handlePacket(direction, Utils.readVarInt(bais), bais);
+    }
+
+    /**
+     * @return Whether {@link #shutdown()} has been called
+     */
+    public boolean isShutdown()
+    {
+        return isShutdown;
     }
 
     /**
@@ -256,6 +269,20 @@ public class PacketHandler
 
         else
             logger.trace("Function has already been registered! Aborting...");
+    }
+
+    /**
+     * Called to indicate that the connection being handled by this PacketHandler is being shutdown.
+     * This calls all of the {@link Entrypoint#shutdown()} functions on loaded mods. This method may
+     * only be invoked once.
+     */
+    synchronized void shutdown()
+    {
+        if (isShutdown) return;
+
+        isShutdown = true;
+
+        loadedMods.forEach(entrypoint -> Utils.reporting(entrypoint::shutdown));
     }
 
     /**
