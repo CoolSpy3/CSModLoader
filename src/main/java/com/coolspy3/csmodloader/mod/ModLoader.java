@@ -431,16 +431,24 @@ public final class ModLoader
                     logger.trace("Loading {}...", file);
                     for (JarEntry entry : Collections.list(jar.entries()))
                     {
-                        String name = entry.getName();
+                        try
+                        {
+                            String name = entry.getName();
 
-                        if (entry.isDirectory() || !name.endsWith(".class")
-                                || loadedClasses.contains(name))
-                            continue;
+                            if (entry.isDirectory() || !name.endsWith(".class")
+                                    || loadedClasses.contains(name))
+                                continue;
 
-                        loadedClasses.add(name);
+                            loadedClasses.add(name);
 
-                        classes.add(cl
-                                .loadClass(name.substring(0, name.length() - 6).replace('/', '.')));
+                            classes.add(cl.loadClass(
+                                    name.substring(0, name.length() - 6).replace('/', '.')));
+                        }
+                        catch (Exception | NoClassDefFoundError e)
+                        {
+                            for (int i = 0; i < modFiles.length; i++)
+                                if (modFiles[i] == file) throw e;
+                        }
                     }
                 }
                 catch (ClassNotFoundException | IOException | NoClassDefFoundError e)

@@ -2,6 +2,7 @@ package com.coolspy3.csmodloader;
 
 import java.io.File;
 import java.io.IOException;
+import java.lang.Thread.UncaughtExceptionHandler;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.SecureRandom;
@@ -10,6 +11,8 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
 import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.mod.Entrypoint;
@@ -18,16 +21,13 @@ import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
-
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The main class
  */
-@Mod(id = "csmodloader", name = "CSModLoader", version = "1.1.0", description = "The mod loader")
+@Mod(id = "csmodloader", name = "CSModLoader", version = "1.2.0", description = "The mod loader")
 public class Main
 {
 
@@ -54,6 +54,15 @@ public class Main
         logger.info("Program Started!");
 
         Runtime.getRuntime().addShutdownHook(new Thread(() -> logger.info("Program Exiting...")));
+
+        Thread.setDefaultUncaughtExceptionHandler(new UncaughtExceptionHandler()
+        {
+            @Override
+            public void uncaughtException(Thread t, Throwable e)
+            {
+                logger.error("Uncaught Exception in Thread: {}", t.getName(), e);
+            }
+        });
 
         String accessToken = null;
         String gameDir = null;
@@ -133,7 +142,7 @@ public class Main
 
         ArrayList<Entrypoint> mods = ModLoader.loadMods();
 
-        if (mods == null) return;
+        if (mods == null) System.exit(1);
 
         PacketHandler.setMods(mods);
 

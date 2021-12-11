@@ -83,6 +83,7 @@ public class ConnectionHandler implements Runnable
 
     private ConnectionHandler other;
     private PacketHandler packetHandler;
+    private boolean hasPacketHandler = false;
 
     /**
      * Creates a new ConnectionHandler
@@ -186,15 +187,6 @@ public class ConnectionHandler implements Runnable
     }
 
     /**
-     * Blocks the packet which is being processed from being forwarded to the output stream
-     */
-    @Deprecated
-    void blockPacket()
-    {
-        blockPacket = true;
-    }
-
-    /**
      * Writes the data contained in the provided stream to this ConnectionHandler's OutputStream
      * after prefixing its length.
      *
@@ -228,7 +220,6 @@ public class ConnectionHandler implements Runnable
     private void setPacketHandler(PacketHandler packetHandler)
     {
         this.packetHandler = packetHandler;
-        packetHandler.linkToCurrentThread();
     }
 
     /**
@@ -339,6 +330,12 @@ public class ConnectionHandler implements Runnable
      */
     protected void readLoop() throws DataFormatException, IOException
     {
+        if (!hasPacketHandler && packetHandler != null)
+        {
+            hasPacketHandler = true;
+            packetHandler.linkToCurrentThread();
+        }
+
         int length = Utils.readVarInt(is);
         is.mark(length);
 
@@ -565,7 +562,8 @@ public class ConnectionHandler implements Runnable
         }
 
         if (state == State.PLAY) Utils.safeExecuteTimeoutSync(
-                () -> Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
+                () -> Utils.reporting(
+                        () -> blockPacket = packetHandler.handleRawPacket(direction, packetData)),
                 500, "PacketHandler.handlePacket(%s)",
                 Utils.readVarInt(new ByteArrayInputStream(packetData)));
 

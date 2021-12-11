@@ -40,8 +40,8 @@ class MainGUI extends JPanel implements ActionListener
         setLayout(new BorderLayout());
 
         add(addServerButton = new JButton("Add Server"), BorderLayout.NORTH);
-        add(modsButton = new JButton(ModLoader.getModList().size() + " Mods Loaded"),
-                BorderLayout.SOUTH);
+        add(modsButton = new JButton(ModLoader.getModList().size() + " Mod"
+                + (ModLoader.getModList().size() == 1 ? "" : "s") + " Loaded"), BorderLayout.SOUTH);
 
         addServerButton.addActionListener(this);
         modsButton.addActionListener(this);
