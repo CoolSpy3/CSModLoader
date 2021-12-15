@@ -561,10 +561,9 @@ public class ConnectionHandler implements Runnable
             }
         }
 
-        if (state == State.PLAY) Utils.safeExecuteTimeoutSync(
-                () -> Utils.reporting(
-                        () -> blockPacket = packetHandler.handleRawPacket(direction, packetData)),
-                500, "PacketHandler.handlePacket(%s)",
+        if (state == State.PLAY) blockPacket = Utils.safeExecuteTimeoutSync(
+                () -> Utils.reporting(() -> packetHandler.handleRawPacket(direction, packetData)),
+                500, false, "PacketHandler.handlePacket(%s)",
                 Utils.readVarInt(new ByteArrayInputStream(packetData)));
 
         is.reset();

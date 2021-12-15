@@ -81,7 +81,7 @@ public class ShiftableList<T> extends ArrayList<T>
     {
         int idx = indexOf(el);
 
-        if (idx != -1) shiftDown(el);
+        if (idx != -1) shiftDown(idx);
     }
 
     /**
