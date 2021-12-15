@@ -11,8 +11,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.UUID;
 
-import ch.qos.logback.classic.LoggerContext;
-import ch.qos.logback.core.util.StatusPrinter;
 import com.coolspy3.csmodloader.gui.MainWindow;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.mod.Entrypoint;
@@ -21,13 +19,16 @@ import com.coolspy3.csmodloader.mod.ModLoader;
 import com.coolspy3.csmodloader.network.PacketHandler;
 import com.coolspy3.csmodloader.network.ServerInstance;
 import com.coolspy3.csmodloader.util.Utils;
+
+import ch.qos.logback.classic.LoggerContext;
+import ch.qos.logback.core.util.StatusPrinter;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
  * The main class
  */
-@Mod(id = "csmodloader", name = "CSModLoader", version = "1.2.0", description = "The mod loader")
+@Mod(id = "csmodloader", name = "CSModLoader", version = "1.2.1", description = "The mod loader")
 public class Main
 {
 
