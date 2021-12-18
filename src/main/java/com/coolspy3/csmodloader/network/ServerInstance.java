@@ -13,6 +13,7 @@ import com.coolspy3.csmodloader.gui.Server;
 import com.coolspy3.csmodloader.gui.TextAreaFrame;
 import com.coolspy3.csmodloader.util.Utils;
 
+import net.minecraft.client.multiplayer.ServerAddress;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -73,12 +74,10 @@ public class ServerInstance
     {
         this.serverId = serverId;
 
-        String[] parts = ip.split(":");
+        ServerAddress addr = ServerAddress.parseString(ip);
 
-        if (parts.length > 2) throw new IllegalArgumentException("Invalid ip: " + ip);
-
-        host = parts[0];
-        port = parts.length > 1 ? Integer.parseInt(parts[1]) : 25565;
+        host = addr.getHost();
+        port = addr.getPort();
 
         connections = new ArrayList<>();
     }
