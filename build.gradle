@@ -63,7 +63,7 @@ publishing {
         gpr(MavenPublication) {
             groupId = 'com.coolspy3'
             artifactId = 'csmodloader'
-            version = '1.2.2'
+            version = '1.2.3'
 
             from components.java
         }
