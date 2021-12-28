@@ -5,6 +5,8 @@ import java.net.ServerSocket;
 import java.net.Socket;
 import java.security.KeyPair;
 import java.util.ArrayList;
+import java.util.Map;
+import java.util.function.Predicate;
 
 import javax.swing.SwingUtilities;
 
@@ -35,9 +37,9 @@ public class ServerInstance
     private static KeyPair rsaKey;
 
     /**
-     * The current running instance
+     * The current running instances
      */
-    private static ServerInstance instance;
+    private static final ArrayList<ServerInstance> instances = new ArrayList<>();
 
     /**
      * The id of the server to connect to
@@ -53,6 +55,10 @@ public class ServerInstance
      * The port of the server to which to connect
      */
     private int port;
+    /**
+     * The local port on which to host the server
+     */
+    private int localPort;
 
     /**
      * The ServerSocket accepting connections to the server
@@ -70,14 +76,15 @@ public class ServerInstance
      * @param ip The ip address of the server including an optional port number in the form
      *        "<ip>:<port>"
      */
-    private ServerInstance(String serverId, String ip)
+    private ServerInstance(String serverId, String ip, int localPort)
     {
         this.serverId = serverId;
+        this.localPort = localPort;
 
         ServerAddress addr = ServerAddress.parseString(ip);
 
-        host = addr.getHost();
-        port = addr.getPort();
+        this.host = addr.getHost();
+        this.port = addr.getPort();
 
         connections = new ArrayList<>();
     }
@@ -91,7 +98,7 @@ public class ServerInstance
     private void startInNewThread() throws IOException
     {
         logger.info("Starting Server ({}): {}:{}", serverId, host, port);
-        server = new ServerSocket(25565);
+        server = new ServerSocket(localPort);
         Thread thread = new Thread(() -> {
             while (!server.isClosed())
                 try
@@ -128,7 +135,23 @@ public class ServerInstance
         Utils.safe(server::close);
         connections.forEach(Connection::close);
 
-        instance = null;
+        instances.remove(this);
+    }
+
+    /**
+     * Gets the id of the running server
+     */
+    private String getServerId()
+    {
+        return serverId;
+    }
+
+    /**
+     * Gets the local port on which this instance is running
+     */
+    private int getLocalPort()
+    {
+        return localPort;
     }
 
     /**
@@ -151,22 +174,23 @@ public class ServerInstance
      */
     public static boolean isRunning()
     {
-        return instance != null;
+        return !instances.isEmpty();
     }
 
     /**
-     * @return The current id of the running ServerInstance or {@code null} if none is running
+     * @return The current id of any running ServerInstance or {@code null} if none is running
      *
      * @see Server#id
      */
+    @Deprecated
     public static String getRunningServerId()
     {
-        return isRunning() ? instance.serverId : null;
+        return isRunning() ? instances.get(0).serverId : null;
     }
 
     /**
-     * Starts a new ServerInstance for the given server. If a ServerInstance is already running,
-     * this has no effect.
+     * Starts a new ServerInstance for the given server. If a ServerInstance is already running on
+     * the same local port, this has no effect.
      *
      * @param id The id of the server to start
      *
@@ -176,11 +200,14 @@ public class ServerInstance
      */
     public static synchronized boolean start(String id)
     {
-        if (instance != null) return false;
+        Server server = Config.getInstance().servers.get(id);
+
+        if (getInstanceOnPort(server.localPort) != null) return false;
 
         try
         {
-            instance = new ServerInstance(id, Config.getInstance().servers.get(id).ip);
+            ServerInstance instance = new ServerInstance(id, server.ip, server.localPort);
+            instances.add(instance);
             instance.startInNewThread();
         }
         catch (Exception e)
@@ -196,12 +223,62 @@ public class ServerInstance
     }
 
     /**
-     * If a ServerInstance is currently running, this method calls its {@link #shutdown()} method.
-     * Otherwise, this method has no effect.
+     * Calls the {@link #shutdown()} method of any running ServerInstances
      */
     public static synchronized void stop()
     {
-        if (instance != null) instance.shutdown();
+        // shutdown modifies instances, so copy the array to avoid a ConcurrentModificationException
+        new ArrayList<>(instances).forEach(ServerInstance::shutdown);
+    }
+
+    /**
+     * Calls the {@link #shutdown()} method of the requested ServerInstance. If the requested id
+     * does not correspond to a running instance, this method has no effect.
+     *
+     * @param id The id of the server to remove
+     */
+    public static synchronized void stop(String id)
+    {
+        // shutdown modifies instances, so copy the array to avoid a ConcurrentModificationException
+        new ArrayList<>(instances).stream().filter(instance -> instance.getServerId().equals(id))
+                .forEach(ServerInstance::shutdown);
+    }
+
+    /**
+     * Retrieves the ServerInstance running on a given local port
+     *
+     * @param localPort The local port to check
+     *
+     * @return The id of the server running on the requested local port or {@code null} if none
+     *         exists
+     */
+    public static synchronized String getInstanceOnPort(int localPort)
+    {
+        return instances.stream().filter(instance -> instance.getLocalPort() == localPort)
+                .map(ServerInstance::getServerId).findAny().orElse(null);
+    }
+
+    /**
+     * Checks whether a ServerInstance with the specified id is running
+     *
+     * @param id The id to check
+     *
+     * @return Whether a ServerInstance with the specified id is running
+     */
+    public static synchronized boolean isRunning(String id)
+    {
+        return instances.stream().map(ServerInstance::getServerId).anyMatch(Predicate.isEqual(id));
+    }
+
+    /**
+     * Stops all running ServerInstances and restarts those whose {@link Server#autoStart} value is
+     * {@code true}
+     */
+    public static void restartServers()
+    {
+        ServerInstance.stop();
+        Config.getInstance().servers.entrySet().stream().filter(entry -> entry.getValue().autoStart)
+                .map(Map.Entry::getKey).forEach(ServerInstance::start);
     }
 
 }

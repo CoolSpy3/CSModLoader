@@ -6,7 +6,7 @@ The functional principle behind this project is to open a TCP Server and set the
 
 ## Restrictions
 Unfortunately, while the design of the mod loader allows it to work regardless of the client used, this comes with a few trade offs:
-1. The loader works by intercepting the packet stream between a client and server, so it only works on servers (if you want to play singleplayer, you can run a local Minecraft server. Keep in mind that the loader uses port `25565` on the local machine, so you would have to set the server to an alternate port.)
+1. The loader works by intercepting the packet stream between a client and server, so it only works on servers (if you want to play singleplayer, you can run a local Minecraft server. Keep in mind that by default the loader uses port `25565` on the local machine, so you would have to set the server to an alternate port.)
 2. The loader is not a client, so any mods designed for other clients Fabric/Forge etc. will not work immediately with this loader. The full reason for this is two part: 1) Because the loader acts as a server to the client, it can only perform actions which can be done by a regular server. Thus, many GUI overlays and non-vanilla features are impossible without great forethought as to how to implement them using vanilla features 2) The APIs exposed by existing loaders would take me a long time to replicate well and is unjustified for my use case (simple chat-based utility mods). If there are any mods you would like to use, my strategy has been to use a site such as [jdec.app](https://jdec.app) to decompile the mod file and then to manually rewrite the relevant code to use this api. (I've done this with [CSAutoGG](https://github.com/CoolSpy3/CSAutoGG) which is a port of [Sk1er's AutoGG Mod](https://sk1er.club/mods/autogg))
 3. For the moment, I have set the mod loader up to use 1.8. It *looks* like newer versions of Minecraft don't make any changes to the part of the specification used by this loader, but I have not tested this. (Note: just because the loader works on multiple versions does not mean that individual mods do)
 
@@ -39,6 +39,12 @@ To use the loader, simply go to your [.minecraft](https://minecraft.fandom.com/w
 To add a server press the `Add Server` button in the mod loader. Then press the `Edit` button next to the new server. This will open a window where you can set an optional name and the server's ip. IP addresses are inputted the same way as the Minecraft client: `<ip>:<port>` (basically just enter whatever you would into a regular Minecraft client).
 
 To connect to a server, press the `Connect` button in the loader and then connect to `localhost` in your Minecraft client.
+
+### Auto-Starting servers
+A server can be marked as `Auto Start`. In this case, it will automatically be available when the loader is launched. The `Restart Servers` button terminates all running servers and restarts just those marked as `Auto Start`.
+
+### Changing the local server port
+The port on which the local server is hosted can be changed in the server settings. By default, this is `25565`, the default Minecraft server port. If it is changed, you will have to specify the new port in the Minecraft client (`localhost:<port>`). If two servers are run on different local ports, they may be run simultaneously. Additionally, multiple servers may be set as `Auto Start` provided that they are configured for different ports. In the case where many servers are running and need to be stopped, the `Stop All Servers` button may be used to terminate all running servers.
 
 ### Changing your .minecraft directory
 If for whatever reason you want to change the minecraft directory the loader uses, just change the directory in the launcher (as you would for a normal profile) and move or copy the `cslogging-config.xml` file and `csmods` folder into the new directory.

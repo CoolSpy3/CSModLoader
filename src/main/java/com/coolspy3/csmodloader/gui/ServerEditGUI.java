@@ -20,7 +20,7 @@ class ServerEditGUI extends JPanel implements ActionListener
     private static final long serialVersionUID = 7715666029410537275L;
 
     private final Server server;
-    private final JTextField serverName, serverIp;
+    private final JTextField serverName, serverIp, localPort;
     private final JButton saveButton, cancelButton;
 
     /**
@@ -28,7 +28,7 @@ class ServerEditGUI extends JPanel implements ActionListener
      */
     ServerEditGUI(String serverId)
     {
-        setLayout(new GridLayout(3, 2));
+        setLayout(new GridLayout(4, 2));
 
         server = Config.getInstance().servers.get(serverId);
 
@@ -37,6 +37,9 @@ class ServerEditGUI extends JPanel implements ActionListener
 
         add(new JLabel("Server Address:"));
         add(serverIp = new JTextField(server.ip, 80));
+
+        add(new JLabel("Local Port:"));
+        add(localPort = new JTextField(Integer.toString(server.localPort), 80));
 
         add(saveButton = new JButton("Save"));
         add(cancelButton = new JButton("Cancel"));
@@ -54,6 +57,17 @@ class ServerEditGUI extends JPanel implements ActionListener
         {
             server.name = serverName.getText();
             server.ip = serverIp.getText();
+
+            try
+            {
+                server.localPort = Integer.parseInt(localPort.getText());
+            }
+            catch (NumberFormatException exc)
+            {
+                server.localPort = 0;
+            }
+
+            if (server.localPort < 1 || server.localPort > 65535) server.localPort = 25565;
 
             Config.safeSave();
         }

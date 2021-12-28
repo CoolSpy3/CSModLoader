@@ -18,12 +18,22 @@ public class Server
      * This server's ip
      */
     public String ip;
+    /**
+     * The local port on which to host the server
+     */
+    public int localPort = 25565;
+    /**
+     * Whether the server should be run on startup
+     */
+    public boolean autoStart;
 
-    public Server(String id, String name, String ip)
+    public Server(String id, String name, String ip, int localPort, boolean autoStart)
     {
         this.id = id;
         this.name = name;
         this.ip = ip;
+        this.localPort = localPort;
+        this.autoStart = autoStart;
     }
 
 }

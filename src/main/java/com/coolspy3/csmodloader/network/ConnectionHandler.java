@@ -56,7 +56,7 @@ public class ConnectionHandler implements Runnable
     private InputStream is;
     private OutputStream os;
 
-    private final String serverIp;
+    private final String serverHost;
     private final PacketDirection direction;
 
     private final KeyPair serverKey;
@@ -90,7 +90,7 @@ public class ConnectionHandler implements Runnable
      *
      * @param iSocket The Socket from which to read
      * @param oSocket The Socket to which to write
-     * @param serverIp The server's hostname. This will be sent to the server to verify you are
+     * @param serverHost The server's hostname. This will be sent to the server to verify you are
      *        connecting via. a valid endpoint
      * @param accessToken The player's access token
      * @param direction The PacketDirection handled by this ConnectionHandler
@@ -98,14 +98,14 @@ public class ConnectionHandler implements Runnable
      *
      * @throws IOException If an I/O error occurs
      */
-    public ConnectionHandler(Socket iSocket, Socket oSocket, String serverIp, String accessToken,
+    public ConnectionHandler(Socket iSocket, Socket oSocket, String serverHost, String accessToken,
             PacketDirection direction, KeyPair serverKey) throws IOException
     {
         this.iSocket = iSocket;
         this.oSocket = oSocket;
         this.is = new BufferedInputStream(iSocket.getInputStream());
         this.os = new BufferedOutputStream(oSocket.getOutputStream());
-        this.serverIp = serverIp;
+        this.serverHost = serverHost;
         this.direction = direction;
         this.serverKey = serverKey;
         this.accessToken = accessToken;
@@ -386,7 +386,7 @@ public class ConnectionHandler implements Runnable
                         ByteArrayOutputStream baos = new ByteArrayOutputStream();
                         baos.write(0x00);
                         Utils.writeVarInt(version, baos);
-                        Utils.writeString(serverIp, baos);
+                        Utils.writeString(serverHost, baos);
                         baos.write(serverPort);
                         Utils.writeVarInt(nextState, baos);
 

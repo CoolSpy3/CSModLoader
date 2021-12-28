@@ -100,7 +100,11 @@ public class Config
                 data.append(line).append("\n");
             }
 
-            INSTANCE = new Gson().fromJson(data.substring(0, data.length() - 1), Config.class);
+            INSTANCE = gson.fromJson(data.substring(0, data.length() - 1), Config.class);
+
+            INSTANCE.servers.values().stream()
+                    .filter(server -> server.localPort < 1 || server.localPort > 65535)
+                    .forEach(server -> server.localPort = 25565);
         }
     }
 
