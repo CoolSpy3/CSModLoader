@@ -28,7 +28,7 @@ import org.slf4j.LoggerFactory;
 /**
  * The main class
  */
-@Mod(id = "csmodloader", name = "CSModLoader", version = "1.3.0", description = "The mod loader")
+@Mod(id = "csmodloader", name = "CSModLoader", version = "1.3.1", description = "The mod loader")
 public class Main
 {
 
