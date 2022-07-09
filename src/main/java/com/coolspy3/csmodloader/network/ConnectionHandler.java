@@ -311,8 +311,6 @@ public class ConnectionHandler implements Runnable
         catch (Exception e)
         {
             logger.error("Error Processing Connection!", e);
-
-            Utils.safeCreateAndWaitFor(() -> new TextAreaFrame(direction.toString(), e));
         }
         finally
         {
@@ -689,7 +687,6 @@ public class ConnectionHandler implements Runnable
      * @param host The server's hostname. This will be sent to the server to verify you are
      *        connecting via. a valid endpoint
      * @param accessToken The player's access token
-     * @param direction The PacketDirection handled by this ConnectionHandler
      * @param key The KeyPair to use during initial authentication
      *
      * @return A Connection object which can be used to manage both handlers\
