@@ -308,8 +308,6 @@ public final class ModLoader
      * @param mod The mod to check
      * @param loadedMods A list of all mods which have already been loaded
      * @return A list of all missing dependencies in the same format as {@link Mod#dependencies()}
-     *
-     * @throws IllegalArgumentException If one or more provided mods are invalid
      */
     private static List<String> getMissingDependenciesValidated(Mod mod, Collection<Mod> loadedMods)
     {
