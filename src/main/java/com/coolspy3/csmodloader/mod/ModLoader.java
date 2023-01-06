@@ -467,6 +467,10 @@ public final class ModLoader
             {
                 throw exc;
             }
+            catch(ModLoadingException exc)
+            {
+                throw exc;
+            }
             catch (RuntimeException exc)
             {
                 throw exc;
