@@ -42,8 +42,17 @@ public final class Utils
 
     /**
      * A reference to {@link StandardCharsets#UTF_8}
+     *
+     * @deprecated Use {@link #CHARSET} instead
      */
+    @Deprecated
     public static final Charset UTF_8 = StandardCharsets.UTF_8;
+
+    /**
+     * The default charset used by this mod loader (UTF-8)
+     */
+    public static final Charset CHARSET = StandardCharsets.UTF_8;
+
     /**
      * A runnable which has no functionality ({@code () -> {}})
      */
@@ -224,7 +233,7 @@ public final class Utils
         ByteArrayOutputStream bais = new ByteArrayOutputStream();
         e.printStackTrace(new PrintStream(bais, true));
 
-        return new String(bais.toByteArray(), UTF_8);
+        return new String(bais.toByteArray(), CHARSET);
     }
 
     /**
@@ -273,7 +282,7 @@ public final class Utils
 
         byte[] requestBytes =
                 (payload instanceof String ? (String) payload : new Gson().toJson(payload))
-                        .getBytes(Utils.UTF_8);
+                        .getBytes(CHARSET);
         conn.setRequestProperty("Content-Length", Integer.toString(requestBytes.length));
 
         try (OutputStream connos = conn.getOutputStream())
@@ -286,7 +295,7 @@ public final class Utils
 
         try (InputStream is = conn.getInputStream())
         {
-            return new Object[] {responseCode, IOUtils.toString(is, Utils.UTF_8)};
+            return new Object[] {responseCode, IOUtils.toString(is, CHARSET)};
         }
     }
 
@@ -670,7 +679,7 @@ public final class Utils
      */
     public static String readString(InputStream is) throws IOException
     {
-        return new String(readBytes(is), UTF_8);
+        return new String(readBytes(is), CHARSET);
     }
 
     /**
@@ -684,7 +693,7 @@ public final class Utils
      */
     public static void writeString(String str, OutputStream os) throws IOException
     {
-        writeBytes(str.getBytes(UTF_8), os);
+        writeBytes(str.getBytes(CHARSET), os);
     }
 
     /**
