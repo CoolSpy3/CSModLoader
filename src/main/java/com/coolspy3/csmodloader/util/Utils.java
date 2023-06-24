@@ -351,7 +351,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func)
     {
-        return t -> Utils.reporting(() -> func.apply(t));
+        return t -> reporting(() -> func.apply(t));
     }
 
     /**
@@ -367,7 +367,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> reporting(ExceptionFunction<T, U> func, U defaultValue)
     {
-        return t -> Utils.reporting(() -> func.apply(t), defaultValue);
+        return t -> reporting(() -> func.apply(t), defaultValue);
     }
 
     /**
@@ -433,7 +433,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func)
     {
-        return t -> Utils.safe(() -> func.apply(t));
+        return t -> safe(() -> func.apply(t));
     }
 
     /**
@@ -449,7 +449,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> safe(ExceptionFunction<T, U> func, U defaultValue)
     {
-        return t -> Utils.safe(() -> func.apply(t), defaultValue);
+        return t -> safe(() -> func.apply(t), defaultValue);
     }
 
     /**
@@ -576,7 +576,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> noFail(ExceptionFunction<T, U> func)
     {
-        return t -> Utils.noFail(() -> func.apply(t));
+        return t -> noFail(() -> func.apply(t));
     }
 
     /**
@@ -744,7 +744,7 @@ public final class Utils
      */
     public static <T, U> Function<T, U> wrap(ExceptionFunction<T, U> func) throws WrapperException
     {
-        return t -> Utils.wrap(() -> func.apply(t));
+        return t -> wrap(() -> func.apply(t));
     }
 
     /**
