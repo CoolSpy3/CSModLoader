@@ -309,12 +309,12 @@ public final class Utils
      */
     public static String randomString(int length)
     {
-        int leftLimit = 48; // numeral '0'
-        int rightLimit = 122; // letter 'z'
+        int leftLimit = '0';
+        int rightLimit = 'z';
         Random random = new Random();
 
         String generatedString = random.ints(leftLimit, rightLimit + 1)
-                .filter(i -> (i <= 57 || i >= 65) && (i <= 90 || i >= 97)).limit(length)
+                .filter(i -> (i <= '9' || i >= 'A') && (i <= 'Z' || i >= 'a')).limit(length)
                 .collect(StringBuilder::new, StringBuilder::appendCodePoint, StringBuilder::append)
                 .toString();
 
