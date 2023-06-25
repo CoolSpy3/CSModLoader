@@ -434,7 +434,8 @@ public final class ModLoader
                             String name = entry.getName();
 
                             if (entry.isDirectory() || !name.endsWith(".class")
-                                    || loadedClasses.contains(name))
+                                    || loadedClasses.contains(name)
+                                    || name.startsWith("META-INF/versions")) // Java 9+ class files
                                 continue;
 
                             loadedClasses.add(name);
@@ -467,7 +468,7 @@ public final class ModLoader
             {
                 throw exc;
             }
-            catch(ModLoadingException exc)
+            catch (ModLoadingException exc)
             {
                 throw exc;
             }
